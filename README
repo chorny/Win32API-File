@@ -1,0 +1,9 @@
+Win32API::File v0.04 -- Low-level access to Win32 API calls for files.
+
+This is a beta release of this module.  The documentation is
+currently very incomplete.  Some of the interfaces may undergo
+minor changes in future releases.
+
+Comments, additions, and bug reports are welcomed.
+
+Tye McQueen, tye@metronet.com, http://www.metronet.com/~tye/.
