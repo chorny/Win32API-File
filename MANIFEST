@@ -16,3 +16,4 @@ ex/CopyBoot.bat
 ex/DiskGeom.plx
 ex/FormatFloppy.plx
 ex/ListDevs.plx
+META.yml                                 Module meta-data (added by MakeMaker)
