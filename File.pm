@@ -5,29 +5,25 @@ package Win32API::File;
 use strict;
 use Carp;
 use Fcntl qw( O_RDONLY O_RDWR O_WRONLY O_APPEND O_BINARY O_TEXT );
-use vars qw( $VERSION @ISA $AUTOLOAD );
+use vars qw( $VERSION @ISA );
 use vars qw( @EXPORT @EXPORT_OK @EXPORT_FAIL %EXPORT_TAGS );
-$VERSION= '0.07';
+$VERSION= '0.08';
 
-require Exporter;
-require DynaLoader;
-@ISA= qw( Exporter DynaLoader );
+use base qw( Exporter DynaLoader );
 
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
 @EXPORT= qw();
 %EXPORT_TAGS= (
-    Func =>	[qw(
-	attrLetsToBits		createFile		getLogicalDrives
+    Func =>	[qw(		attrLetsToBits		createFile
+    	fileConstant		fileLastError		getLogicalDrives
 	CloseHandle		CopyFile		CreateFile
 	DefineDosDevice		DeleteFile		DeviceIoControl
 	FdGetOsFHandle		GetDriveType		GetFileType
-	GetLogicalDrives	GetLogicalDriveStrings	GetOsFHandle
-	GetVolumeInformation	IsRecognizedPartition	IsContainerPartition
-	MoveFile		MoveFileEx		OsFHandleOpen
-	OsFHandleOpenFd		QueryDosDevice		ReadFile
-	SetFilePointer		SetErrorMode		WriteFile )],
+	GetHandleInformation	GetLogicalDrives	GetLogicalDriveStrings
+	GetOsFHandle		GetVolumeInformation	IsRecognizedPartition
+	IsContainerPartition	MoveFile		MoveFileEx
+	OsFHandleOpen		OsFHandleOpenFd		QueryDosDevice
+	ReadFile		SetErrorMode		SetFilePointer
+	SetHandleInformation	WriteFile )],
     FuncA =>	[qw(
 	CopyFileA		CreateFileA		DefineDosDeviceA
 	DeleteFileA		GetDriveTypeA		GetLogicalDriveStringsA
@@ -78,22 +74,24 @@ require DynaLoader;
 	FS_CASE_IS_PRESERVED		FS_CASE_SENSITIVE
 	FS_UNICODE_STORED_ON_DISK	FS_PERSISTENT_ACLS 
 	FS_FILE_COMPRESSION		FS_VOL_IS_COMPRESSED )],
+    HANDLE_FLAG_ =>	[qw(
+	HANDLE_FLAG_INHERIT		HANDLE_FLAG_PROTECT_FROM_CLOSE )],
     IOCTL_STORAGE_ =>	[qw(
-	IOCTL_STORAGE_CHECK_VERIFY		IOCTL_STORAGE_MEDIA_REMOVAL
-	IOCTL_STORAGE_EJECT_MEDIA		IOCTL_STORAGE_LOAD_MEDIA
-	IOCTL_STORAGE_RESERVE			IOCTL_STORAGE_RELEASE
-	IOCTL_STORAGE_FIND_NEW_DEVICES		IOCTL_STORAGE_GET_MEDIA_TYPES
+	IOCTL_STORAGE_CHECK_VERIFY	IOCTL_STORAGE_MEDIA_REMOVAL
+	IOCTL_STORAGE_EJECT_MEDIA	IOCTL_STORAGE_LOAD_MEDIA
+	IOCTL_STORAGE_RESERVE		IOCTL_STORAGE_RELEASE
+	IOCTL_STORAGE_FIND_NEW_DEVICES	IOCTL_STORAGE_GET_MEDIA_TYPES
 	)],
     IOCTL_DISK_ =>	[qw(
-	IOCTL_DISK_GET_DRIVE_GEOMETRY		IOCTL_DISK_GET_PARTITION_INFO
-	IOCTL_DISK_SET_PARTITION_INFO		IOCTL_DISK_GET_DRIVE_LAYOUT
-	IOCTL_DISK_SET_DRIVE_LAYOUT		IOCTL_DISK_VERIFY
-	IOCTL_DISK_FORMAT_TRACKS		IOCTL_DISK_REASSIGN_BLOCKS
-	IOCTL_DISK_PERFORMANCE			IOCTL_DISK_IS_WRITABLE
-	IOCTL_DISK_LOGGING			IOCTL_DISK_FORMAT_TRACKS_EX
-	IOCTL_DISK_HISTOGRAM_STRUCTURE		IOCTL_DISK_HISTOGRAM_DATA
-	IOCTL_DISK_HISTOGRAM_RESET		IOCTL_DISK_REQUEST_STRUCTURE
-	IOCTL_DISK_REQUEST_DATA )],
+	IOCTL_DISK_FORMAT_TRACKS	IOCTL_DISK_FORMAT_TRACKS_EX
+	IOCTL_DISK_GET_DRIVE_GEOMETRY	IOCTL_DISK_GET_DRIVE_LAYOUT
+	IOCTL_DISK_GET_MEDIA_TYPES	IOCTL_DISK_GET_PARTITION_INFO
+	IOCTL_DISK_HISTOGRAM_DATA	IOCTL_DISK_HISTOGRAM_RESET
+	IOCTL_DISK_HISTOGRAM_STRUCTURE	IOCTL_DISK_IS_WRITABLE
+	IOCTL_DISK_LOGGING		IOCTL_DISK_PERFORMANCE
+	IOCTL_DISK_REASSIGN_BLOCKS	IOCTL_DISK_REQUEST_DATA
+	IOCTL_DISK_REQUEST_STRUCTURE	IOCTL_DISK_SET_DRIVE_LAYOUT
+	IOCTL_DISK_SET_PARTITION_INFO	IOCTL_DISK_VERIFY )],
     GENERIC_ =>		[qw(
 	GENERIC_ALL			GENERIC_EXECUTE
 	GENERIC_READ			GENERIC_WRITE )],
@@ -125,61 +123,85 @@ require DynaLoader;
 	VALID_NTFT			PARTITION_NTFT )],
 );
 @EXPORT_OK= ();
-{   my $key;
+{
+    my $key;
     foreach $key (  keys(%EXPORT_TAGS)  ) {
 	push( @EXPORT_OK, @{$EXPORT_TAGS{$key}} );
-	push( @EXPORT_FAIL, @{$EXPORT_TAGS{$key}} )   unless  $key =~ /^Func/;
+	#push( @EXPORT_FAIL, @{$EXPORT_TAGS{$key}} )   unless  $key =~ /^Func/;
     }
 }
 $EXPORT_TAGS{ALL}= \@EXPORT_OK;
 
-sub export_fail {
-    my $self= shift @_;
-    my( $sym, $val, @failed );
-    foreach $sym (  @_  ) {
-	$!= 0;
-	$val= constant($sym);
-	if(  0 == $!  ) {
-	    eval "sub $sym () { $val }";
-	} elsif(  $! =~ /Invalid/  ) {
-	    die "Non-constant ($sym) appears in \@EXPORT_FAIL",
-	      " (this module is broken)";
-	} else {
-	    push( @failed, $sym );
-	}
-    }
-    return @failed;
-}
-
-#######################################################################
-# This AUTOLOAD is used to 'autoload' constants from the constant()
-# XS function.  If a constant is not found then control is passed
-# to the AUTOLOAD in AutoLoader.
-
-sub AUTOLOAD {
-    my($constname);
-    ($constname = $AUTOLOAD) =~ s/.*:://;
-    #reset $! to zero to reset any current errors.
-    $!=0;
-    my $val = constant($constname);
-    if ($! != 0) {
-	if ($! =~ /Invalid/) {
-	    $AutoLoader::AUTOLOAD = $AUTOLOAD;
-	    goto &AutoLoader::AUTOLOAD;
-	}
-	else {
-	    my($pack,$file,$line)= caller;
-	    die "Your vendor has not defined Win32::Misc macro $constname,",
-	        " used at $file line $line.";
-	}
-    }
-    eval "sub $AUTOLOAD () { $val }";
-    goto &$AUTOLOAD;
-}
-
 bootstrap Win32API::File $VERSION;
 
 # Preloaded methods go here.
+
+# To convert C constants to Perl code in cFile.pc
+# [instead of C or C++ code in cFile.h]:
+#    * Modify F<Makefile.PL> to add WriteMakeFile() =>
+#      CONST2PERL/postamble => [[ "Win32API::File" => ]] WRITE_PERL => 1.
+#    * Either comment out C<#include "cFile.h"> from F<File.xs>
+#      or make F<cFile.h> an empty file.
+#    * Make sure the following C<if> block is not commented out.
+#    * "nmake clean", "perl Makefile.PL", "nmake"
+
+if(  ! defined &GENERIC_READ  ) {
+    require "Win32API/File/cFile.pc";
+}
+
+sub fileConstant
+{
+    my( $name )= @_;
+    if(  1 != @_  ||  ! $name  ||  $name =~ /\W/  ) {
+	require Carp;
+	Carp::croak( 'Usage: ',__PACKAGE__,'::fileConstant("CONST_NAME")' );
+    }
+    my $proto= prototype $name;
+    if(  defined \&$name
+     &&  defined $proto
+     &&  "" eq $proto  ) {
+	no strict 'refs';
+	return &$name;
+    }
+    return undef;
+}
+
+# We provide this for backwards compatibility:
+sub constant
+{
+    my( $name )= @_;
+    my $value= fileConstant( $name );
+    if(  defined $value  ) {
+	$!= 0;
+	return $value;
+    }
+    $!= 11; # EINVAL
+    return 0;
+}
+
+BEGIN {
+    my $code= 'return _fileLastError(@_)';
+    local( $!, $^E )= ( 1, 1 );
+    if(  $! ne $^E  ) {
+	$code= '
+	    local( $^E )= _fileLastError(@_);
+	    my $ret= $^E;
+	    return $ret;
+	';
+    }
+    eval "sub fileLastError { $code }";
+    die "$@"   if  $@;
+}
+
+# Since we ISA DynaLoader which ISA AutoLoader, we ISA AutoLoader so we
+# need this next chunk to prevent Win32API::File->nonesuch() from
+# looking for "nonesuch.al" and producing confusing error messages:
+use vars qw($AUTOLOAD);
+sub AUTOLOAD {
+    require Carp;
+    Carp::croak(
+      "Can't locate method $AUTOLOAD via package Win32API::File" );
+}
 
 # Replace "&rout;" with "goto &rout;" when that is supported on Win32.
 
@@ -237,8 +259,8 @@ sub OsFHandleOpen {
 	$mode |= $o_text;
     }
     $mode |= O_BINARY   if  $access =~ /b/i;
-    my( $fd )= OsFHandleOpenFd( $osfh, $mode )
-      or  return ();
+    my $fd= OsFHandleOpenFd( $osfh, $mode );
+    return  undef   if  $fd < 0;
     return  open( $fh, $pref."&=".$fd );
 }
 
@@ -262,7 +284,13 @@ sub GetOsFHandle {
 	    return ();	# $! should be set by fileno().
 	}
     }
-    return FdGetOsFHandle( $fd );
+    my $h= FdGetOsFHandle( $fd );
+    if(  INVALID_HANDLE_VALUE() == $h  ) {
+	$h= "";
+    } elsif(  "0" eq $h  ) {
+	$h= "0 but true";
+    }
+    return $h;
 }
 
 sub attrLetsToBits
@@ -426,12 +454,13 @@ Win32API::File - Low-level access to Win32 system API calls for files/dirs.
 
 =head1 SYNOPSIS
 
-  use Win32API::File 0.02 qw( :ALL );
+  use Win32API::File 0.08 qw( :ALL );
 
   MoveFile( $Source, $Destination )
-    or  die "Can't move $Source to $Destination: $^E\n";
+    or  die "Can't move $Source to $Destination: ",fileLastError(),"\n";
   MoveFileEx( $Source, $Destination, MOVEFILE_REPLACE_EXISTING() )
-    or  die "Can't move $Source to $Destination: $^E\n";
+    or  die "Can't move $Source to $Destination: ",fileLastError(),"\n";
+  [...]
 
 =head1 DESCRIPTION
 
@@ -453,22 +482,25 @@ Nothing is exported by default.  The following tags can be used to
 have large sets of symbols exported:  C<":Func">, C<":FuncA">,
 C<":FuncW">, C<":Misc">, C<":DDD_">, C<":DRIVE_">, C<":FILE_">,
 C<":FILE_ATTRIBUTE_">, C<":FILE_FLAG_">, C<":FILE_SHARE_">,
-C<":FILE_TYPE_">, C<":FS_">, C<":IOCTL_STORAGE_">, C<":IOCTL_DISK_">,
-C<":GENERIC_">, C<":MEDIA_TYPE">, C<":MOVEFILE_">, C<":SECURITY_">,
-C<":SEM_">, and C<":PARTITION_">.
+C<":FILE_TYPE_">, C<":FS_">, C<":HANDLE_FLAG_">, C<":IOCTL_STORAGE_">,
+C<":IOCTL_DISK_">, C<":GENERIC_">, C<":MEDIA_TYPE">, C<":MOVEFILE_">,
+C<":SECURITY_">, C<":SEM_">, and C<":PARTITION_">.
 
 =over
 
 =item C<":Func">
 
-The basic function names: C<attrLetsToBits>, C<createFile>,
-C<getLogicalDrives>, C<CloseHandle>, C<CopyFile>, C<CreateFile>,
-C<DeleteFile>, C<DefineDosDevice>, C<DeviceIoControl>,
-C<FdGetOsFHandle>, C<GetDriveType>, C<GetFileType>, C<GetLogicalDrives>,
-C<GetLogicalDriveStrings>, C<GetOsFHandle>, C<GetVolumeInformation>,
-C<IsRecognizedPartition>, C<IsContainerPartition>, C<MoveFile>,
-C<MoveFileEx>, C<OsFHandleOpen>, C<OsFHandleOpenFd>, C<QueryDosDevice>,
-C<ReadFile>, C<SetFilePointer>, C<SetErrorMode>, and C<WriteFile>.
+The basic function names: C<attrLetsToBits>,       C<createFile>,
+C<fileConstant>,          C<fileLastError>,        C<getLogicalDrives>,
+C<CloseHandle>,           C<CopyFile>,             C<CreateFile>,
+C<DefineDosDevice>,       C<DeleteFile>,           C<DeviceIoControl>,
+C<FdGetOsFHandle>,        C<GetDriveType>,         C<GetFileType>,
+C<GetHandleInformation>,  C<GetLogicalDrives>,     C<GetLogicalDriveStrings>,
+C<GetOsFHandle>,          C<GetVolumeInformation>, C<IsRecognizedPartition>,
+C<IsContainerPartition>,  C<MoveFile>,             C<MoveFileEx>,
+C<OsFHandleOpen>,         C<OsFHandleOpenFd>,      C<QueryDosDevice>,
+C<ReadFile>,              C<SetErrorMode>,         C<SetFilePointer>,
+C<SetHandleInformation>,  and                      C<WriteFile>.
 
 =over
 
@@ -528,31 +560,33 @@ C<FILE_ATTRIBUTE_TEMPORARY>
 
 This is a Perl-friendly wrapper around C<CreateFile>.
 
-On failure, C<$hObject> gets set to a false value and C<$^E> is set
-to the reason for the failure.  Otherwise, C<$hObject> gets set to
-a Win32 native file handle which is alwasy a true value [returns
-C<"0 but true"> in the impossible case of the handle having a value
-of C<0>].
+On failure, C<$hObject> gets set to a false value and C<regLastError()>
+and C<$^E> are set to the reason for the failure.  Otherwise,
+C<$hObject> gets set to a Win32 native file handle which is alwasy
+a true value [returns C<"0 but true"> in the impossible(?) case of
+the handle having a value of C<0>].
 
 C<$sPath> is the path to the file [or device, etc.] to be opened.  See
 C<CreateFile> for more information on possible special values for
 C<$sPath>.  
 
-C<$svAccess> can be a number containing the bit mask representing the
-specific type(s) of access to the file that you desire.  See the C<$uAccess>
-parameter to C<CreateFile> for more information on these values.
+C<$svAccess> can be a number containing the bit mask representing
+the specific type(s) of access to the file that you desire.  See the
+C<$uAccess> parameter to C<CreateFile> for more information on these
+values.
 
-More likely, C<$svAccess> is a string describing the generic type of access
-you desire and possibly the file creation options to use.  In this case,
-C<$svAccess> should contain zero or more characters from C<"qrw"> [access
-desired], zero or one character each from C<"ktn"> and C<"ce">, and optional
-white space.  These letters stand for, respectively, "Query access", "Read
-access", "Write access", "Keep if exists", "Truncate if exists", "New file
-only", "Create if none", and "Existing file only".  Case is ignored.
+More likely, C<$svAccess> is a string describing the generic type of
+access you desire and possibly the file creation options to use.  In
+this case, C<$svAccess> should contain zero or more characters from
+C<"qrw"> [access desired], zero or one character each from C<"ktn">
+and C<"ce">, and optional white space.  These letters stand for,
+respectively, "Query access", "Read access", "Write access", "Keep if
+exists", "Truncate if exists", "New file only", "Create if none", and
+"Existing file only".  Case is ignored.
 
-You can pass in C<"?"> for C<$svAccess> to have an error message displayed
-summarizing its possible values.  This is very handy when doing on-the-fly
-programming using the Perl debugger:
+You can pass in C<"?"> for C<$svAccess> to have an error message
+displayed summarizing its possible values.  This is very handy when
+doing on-the-fly programming using the Perl debugger:
 
     Win32API::File::createFile:  $svAccess can use the following:
 	One or more of the following:
@@ -573,11 +607,11 @@ programming using the Perl debugger:
       'rt' or 'rn' implies 'c'.
       Or $access can be numeric.
 
-C<$svAccess> is designed to be "do what I mean", so you can skip the rest of
-its explanation unless you are interested in the complex details.  Note
-that, if you want write access to a device, you need to specify C<"k"> and
-C<"e"> [as in C<"w ke"> or C<"rw ke">] since Win32 requires C<OPEN_EXISTING>
-be used when opening a device.
+C<$svAccess> is designed to be "do what I mean", so you can skip
+the rest of its explanation unless you are interested in the complex
+details.  Note that, if you want write access to a device, you need
+to specify C<"k"> [and perhaps C<"e">, as in C<"w ke"> or C<"rw ke">]
+since Win32 suggests C<OPEN_EXISTING> be used when opening a device.
 
 =over
 
@@ -593,8 +627,8 @@ C<"q"> or C<"q ke"> may be easier to understand than just C<""> or C<"ke">.
 
 Stands for "Read access".  Sets the C<GENERIC_READ> bit(s) in the
 C<$uAccess> that is passed to C<CreateFile>.  This is the default
-access if the C<$svAccess> parameter is missing or is C<undef> and
-if not overridden by C<$rvhvOptions>.
+access if the C<$svAccess> parameter is missing [or if it is C<undef>
+and C<$rvhvOptions> doesn't specify an C<"Access"> option].
 
 =item C<"w">
 
@@ -612,8 +646,8 @@ with C<"t"> and C<"n">.
 
 Stands for "Truncate if exists".  If the requested file exists, then
 it is truncated to zero length and then opened.  This is the default if
-C<GENERIC_WRITE> access has been requested and C<GENERIC_READ> access has
-not been requested.  Contrast with C<"k"> and C<"n">.
+C<GENERIC_WRITE> access has been requested and C<GENERIC_READ> access
+has not been requested.  Contrast with C<"k"> and C<"n">.
 
 =item C<"n">
 
@@ -623,17 +657,18 @@ C<"t">.  Can't be used with C<"e">.
 
 =item C<"c">
 
-Stands for "Create if none".  If the requested file does not exist, then
-it is created and then opened.  This is the default if C<GENERIC_WRITE>
-access has been requested or if C<"t"> or C<"n"> was specified.  Contrast
-with C<"e">.
+Stands for "Create if none".  If the requested file does not
+exist, then it is created and then opened.  This is the default
+if C<GENERIC_WRITE> access has been requested or if C<"t"> or
+C<"n"> was specified.  Contrast with C<"e">.
 
 =item C<"e">
 
-Stands for "Existing file only".  If the requested file does not exist, then
-nothing is opened and the C<createFile> call fails.  This is the default
-unless C<GENERIC_WRITE> access has been requested or C<"t"> or C<"n"> was
-specified.   Contrast with C<"c">.   Can't be used with C<"n">.
+Stands for "Existing file only".  If the requested file does not
+exist, then nothing is opened and the C<createFile> call fails.  This
+is the default unless C<GENERIC_WRITE> access has been requested or
+C<"t"> or C<"n"> was specified.   Contrast with C<"c">.   Can't be
+used with C<"n">.
 
 =back
 
@@ -687,7 +722,7 @@ If another process currently has read, write, and/or delete access to
 the file and you don't allow that level of sharing, then your call to
 C<createFile> will fail.  If you requested read, write, and/or delete
 access and another process already has the file open but doesn't allow
-that level of sharing, thenn your call to C<createFile> will fail.  Once
+that level of sharing, then your call to C<createFile> will fail.  Once
 you have the file open, if another process tries to open it with read,
 write, and/or delete access and you don't allow that level of sharing,
 then that process won't be allowed to open the file.
@@ -695,8 +730,8 @@ then that process won't be allowed to open the file.
 C<$rvhvOptions> is a reference to a hash where any keys must be from
 the list C<qw( Access Create Share Attributes Flags Security Model )>.
 The meaning of the value depends on the key name, as described below.
-Any option values in C<$rvhvOptions> override the settings from C<$svAccess>
-and C<$svShare> if they conflict.
+Any option values in C<$rvhvOptions> override the settings from
+C<$svAccess> and C<$svShare> if they conflict.
 
 =over
 
@@ -746,8 +781,8 @@ indicate the type of access desired.  C<GENERIC_READ> is the default.
 
 C<$sCreate> should be a string constaing zero or one character from
 C<"ktn"> and zero or one character from C<"ce">.  These stand for
-"keep if exists", "truncate if exists", "new file only", "create if
-none", and "existing file only".  These are translated into a
+"Keep if exists", "Truncate if exists", "New file only", "Create if
+none", and "Existing file only".  These are translated into a
 C<$uCreate> value.
 
 C<$uCreate> should be one of C<OPEN_ALWAYS>, C<OPEN_EXISTING>,
@@ -795,33 +830,36 @@ return value on a poorly equipped computer would be C<("A:\\","C:\\")>.
 =item C<CloseHandle( $hObject )>
 
 Closes a Win32 native handle, such as one opened via C<CreateFile>. 
-Like most routines, if it fails then it returns a false value and sets
-C<$^E> to indicate the reason for the failure.   Returns a true value
-for success.
+Like most routines, returns a true value if successful and a false
+value [and sets C<$^E> and C<regLastError()>] on failure.
 
 =item CopyFile
 
 =item C<CopyFile( $sOldFileName, $sNewFileName, $bFailIfExists )>
 
-C<$sOldFileName> is the path to the file to be copied.  C<$sNewFileName>
-is the path to where the file should be copied.  Note that you can E<NOT>
-just specify a path to a directory in C<$sNewFileName> to copy the
-file to that directory using the same file name.
+C<$sOldFileName> is the path to the file to be copied. 
+C<$sNewFileName> is the path to where the file should be copied. 
+Note that you can E<NOT> just specify a path to a directory in
+C<$sNewFileName> to copy the file to that directory using the
+same file name.
 
-If C<$bFailIfExists> is true and C<$sNewFileName> is the path to a
-file that already exists, then C<CopyFile> will fail.  If
+If C<$bFailIfExists> is true and C<$sNewFileName> is the path to
+a file that already exists, then C<CopyFile> will fail.  If
 C<$bFailIfExists> is falsea, then the copy of the C<$sOldFileNmae>
 file will overwrite the C<$sNewFileName> file if it already exists.
+
+Like most routines, returns a true value if successful and a false
+value [and sets C<$^E> and C<regLastError()>] on failure.
 
 =item CreateFile
 
 =item C<$hObject= CreateFile( $sPath, $uAccess, $uShare, $pSecAttr, $uCreate, $uFlags, $hModel )>
 
-On failure, C<$hObject> gets set to a false value and C<$^E> is set
-to the reason for the failure.  Otherwise, C<$hObject> gets set to
-a Win32 native file handle which is alwasy a true value [returns
-C<"0 but true"> in the impossible case of the handle having a value
-of C<0>].
+On failure, C<$hObject> gets set to a false value and C<$^E> and
+C<fileLastError()> are set to the reason for the failure.  Otherwise,
+C<$hObject> gets set to a Win32 native file handle which is always a
+true value [returns C<"0 but true"> in the impossible(?) case of the
+handle having a value of C<0>].
 
 C<$sPath> is the path to the file [or device, etc.] to be opened.
 
@@ -833,9 +871,13 @@ Under Windows NT, C<$sPath> can start with C<"//?/"> to allow the use
 of paths longer than C<MAX_PATH> [for UNC paths, replace the leading
 C<"//"> with C<"//?/UNC/">, as in C<"//?/UNC/Server/Share/Dir/File.Ext">].
 
-C<$sPath> can start with C<"//./"> to indicate that the rest of the path
-is the name of a "DOS device."  You can use C<QueryDosDevice> to list
-all current DOS devices and can add or delete them with C<DefineDosDevice>.
+C<$sPath> can start with C<"//./"> to indicate that the rest of the
+path is the name of a "DOS device."  You can use C<QueryDosDevice>
+to list all current DOS devices and can add or delete them with
+C<DefineDosDevice>.  If you get the source-code distribution of this
+module from CPAN, then it includes an example script, F<ex/ListDevs.plx>
+that will list all current DOS devices and their "native" definition.
+Again, note that this doesn't work under Win95 nor Win98.
 
 The most common such DOS devices include:
 
@@ -859,7 +901,7 @@ a partition and can use the file system on the disk as usual.
 Your F<C:> partition.  Doesn't work under Windows 95.  This allows
 you to read or write raw sectors of that partition and to use
 C<DeviceIoControl> to perform miscellaneous queries and operations
-to the sector.  Writing raw sectors and certain other operations
+to the partition.  Writing raw sectors and certain other operations
 can seriously damage your files or the function of your computer.
 
 Locking this for exclusive access doesn't prevent access to the
@@ -867,13 +909,13 @@ physical drive that the partition is on so other processes can
 still access the raw sectors that way.  Locking this for exclusive
 access E<does> prevent other processes from opening the same raw
 partition and E<does> prevent access to the file system on it.  It
-even prevents the current process from accessing the file system on
-that partition.
+even prevents the current process from accessing the file system
+on that partition.
 
 =item C<"//./A:">
 
-The raw floppy disk.  Doesn't work under Windows 95.  This allows you
-to read or write raw sectors of the floppy disk and to use
+The raw floppy disk.  Doesn't work under Windows 95.  This allows
+you to read or write raw sectors of the floppy disk and to use
 C<DeviceIoControl> to perform miscellaneous queries and operations
 to the floopy disk or drive.
 
@@ -931,7 +973,7 @@ other C<SECURITY_*> constants to specify the security quality of
 service to be used.
 
 C<$hModel> is C<0> [or C<[]>, both of which mean C<NULL>] or a Win32
-native handle opened  with C<GENERIC_READ> access to a model file from
+native handle opened with C<GENERIC_READ> access to a model file from
 which file attributes and extended attributes are to be copied if a
 new file gets created.
 
@@ -951,6 +993,11 @@ Examples:
 
 =item C<DefineDosDevice( $uFlags, $sDosDeviceName, $sTargetPath )>
 
+Defines a new DOS device, overrides the current definition of a DOS
+device, or deletes a definition of a DOS device.  Like most routines,
+returns a true value if successful and a false value [and sets C<$^E>
+and C<regLastError()>] on failure.
+
 C<$sDosDeviceName> is the name of a DOS device for which we'd like
 to add or delete a definition.
 
@@ -962,7 +1009,7 @@ bits set:
 =item C<DDD_RAW_TARGET_PATH>
 
 Indicates that C<$sTargetPath> will be a raw Windows NT object name. 
-This usually means that C<$sTargetPath> starts with C<"\\Devices\\">. 
+This usually means that C<$sTargetPath> starts with C<"\\Device\\">. 
 Note that you cannot use C<"/"> in place of C<"\\"> in raw target path
 names.
 
@@ -973,8 +1020,8 @@ C<[]> [for C<NULL>], then the most recently added definition for
 C<$sDosDeviceName> is removed.  Otherwise the most recently added
 definition matching C<$sTargetPath> is removed.
 
-If the last definition is removed, then the DOS device name is also
-deleted.
+If the last definition is removed, then the DOS device name is
+also deleted.
 
 =item C<DDD_EXACT_MATCH_ON_REMOVE>
 
@@ -985,11 +1032,11 @@ only needs to match a prefix of the definition.
 
 =back
 
-C<$sTargetPath> is the DOS device's specific definition that you wish
-to add or delete.  For C<DDD_RAW_TARGET_PATH>, these usually start
-with C<"\\Devices\\">.  If the C<DDD_RAW_TARGET_PATH> bit is not
-set, then C<$sTargetPath> is just an ordinary path to some file or
-directory, providing the functionality of the B<subst> command.
+C<$sTargetPath> is the DOS device's specific definition that you
+wish to add or delete.  For C<DDD_RAW_TARGET_PATH>, these usually
+start with C<"\\Device\\">.  If the C<DDD_RAW_TARGET_PATH> bit is
+not set, then C<$sTargetPath> is just an ordinary path to some file
+or directory, providing the functionality of the B<subst> command.
 
 =item DeleteFile
 
@@ -1002,9 +1049,17 @@ to or not before deleting the file so that files that you have
 protected by marking them as read-only are not always protected from
 Perl's C<unlink>.
 
+Like most routines, returns a true value if successful and a false
+value [and sets C<$^E> and C<regLastError()>] on failure.
+
 =item DeviceIoControl
 
 =item C<DeviceIoControl( $hDevice, $uIoControlCode, $pInBuf, $lInBuf, $opOutBuf, $lOutBuf, $olRetBytes, $pOverlapped )>
+
+Requests a special operation on an I/O [input/output] device, such
+as ejecting a tape or formatting a disk.  Like most routines, returns
+a true value if successful and a false value [and sets C<$^E> and
+C<regLastError()>] on failure.
 
 C<$hDevice> is a Win32 native file handle to a device [return value
 from C<CreateFile>].
@@ -1012,11 +1067,11 @@ from C<CreateFile>].
 C<$uIoControlCode> is an unsigned value [a C<IOCTL_*> constant]
 indicating the type query or other operation to be performed.
 
-C<$pInBuf> is C<[]> [for C<NULL>] or a data structure packed into a string.
-The type of data structure depends on the C<$uIoControlCode> value.
-C<$lInBuf> is C<0> or the length of the structure in C<$pInBuf>.  If 
-C<$pInBuf> is not C<[]> and C<$lInBuf> is C<0>, then C<$lInBuf> will
-automatically be set to C<length($pInBuf)> for you.
+C<$pInBuf> is C<[]> [for C<NULL>] or a data structure packed into a
+string.  The type of data structure depends on the C<$uIoControlCode>
+value.  C<$lInBuf> is C<0> or the length of the structure in
+C<$pInBuf>.  If C<$pInBuf> is not C<[]> and C<$lInBuf> is C<0>, then
+C<$lInBuf> will automatically be set to C<length($pInBuf)> for you.
 
 C<$opOutBuf> is C<[]> [for C<NULL>] or will be set to contain a
 returned data structure packed into a string.  C<$lOutBuf> indicates
@@ -1024,8 +1079,8 @@ how much space to allocate in C<$opOutBuf> for C<DeviceIoControl> to
 store the data structure.  If C<$lOutBuf> is a number and C<$opOutBuf>
 already has a buffer allocated for it that is larger than C<$lOutBuf>
 bytes, then this larger buffer size will be passed to C<DeviceIoControl>.
-To force a specific buffer size to be passed to C<DeviceIoControl>,
-prepend a C<"="> to the front of C<$lOutBuf>.
+However, you can force a specific buffer size to be passed to
+C<DeviceIoControl> by prepending a C<"="> to the front of C<$lOutBuf>.
 
 C<$olRetBytes> is C<[]> or is a scalar to receive the number of bytes
 written to C<$opOutBuf>.  Even when C<$olRetBytes> is C<[]>, a valid
@@ -1045,8 +1100,9 @@ C<FILE_FLAG_OVERLAPPED> flag set.
 C<FdGetOsFHandle> simply calls C<_get_osfhandle()>.  It was renamed
 to better fit in with the rest the function names of this module,
 in particular to distinguish it from C<GetOsFHandle>.  It takes an
-integer file descriptor [as from C<fileno>] and return the Win32
-native file handle assocatiated with that file descriptor.
+integer file descriptor [as from Perl's C<fileno>] and returns the
+Win32 native file handle associated with that file descriptor or
+C<INVALID_HANDLE_VALUE> if C<$ivFd> is not an open file descriptor.
 
 When you call Perl's C<open> to set a Perl file handle [like C<STDOUT>],
 Perl calls C's C<fopen> to set a stdio C<FILE *>.  C's C<fopen> calls
@@ -1057,6 +1113,53 @@ file handle.  So every Perl file handle [like C<STDOUT>] has an integer
 file descriptor associated with it that you can get via C<fileno>.  And,
 under Win32, every file descriptor has a Win32 native file handle
 associated with it.  C<FdGetOsFHandle> lets you get access to that.
+
+C<$hNativeHandle> is set to C<INVALID_HANDLE_VALUE> [and
+C<lastFileError()> and C<$^E> are set] if C<FdGetOsFHandle> fails. 
+See also C<GetOsFHandle> which provides a friendlier interface.
+
+=item fileConstant
+
+=item C<$value= fileConstant( $sConstantName )>
+
+Fetch the value of a constant.  Returns C<undef> if C<$sConstantName>
+is not the name of a constant supported by this module.  Never sets
+C<$!> nor C<$^E>.
+
+This function is rarely used since you will usually get the value of a
+constant by having that constant imported into your package by listing
+the constant name in the C<use Win32API::File> statement and then
+simply using the constant name in your code [perhaps followed by
+C<()>].  This function is useful for verifying constant names not in
+Perl code, for example, after prompting a user to type in a constant
+name.
+
+=item fileLastError
+
+=item C<$svError= fileLastError();>
+
+=item C<fileLastError( $uError );>
+
+Returns the last error encountered by a routine from this module. 
+It is just like C<$^E> except it isn't changed by anything except
+routines from this module.  Ideally you could just use C<$^E>, but
+current versions of Perl often overwrite C<$^E> before you get a
+chance to check it and really old versions of Perl don't really
+support C<$^E> under Win32.
+
+Just like C<$^E>, in a numeric context C<fileLastError()> returns
+the numeric error value while in a string context it returns a
+text description of the error [actually it returns a Perl scalar
+that contains both values so C<$x= fileLastError()> causes C<$x>
+to give different values in string vs. numeric contexts].  On old
+versions of Perl where C<$^E> isn't tied to C<GetLastError()>,
+C<fileLastError> simply returns the number of the error and you'll
+need to use <Win32::FormatMessage> to get the error string.
+
+The last form sets the error returned by future calls to
+C<fileLastError()> and should not be used often.  C<$uError> must
+be a numeric error code.  Also returns the dual-valued version
+of C<$uError>.
 
 =item GetDriveType
 
@@ -1123,7 +1226,7 @@ An ordinary disk file.
 =item C<FILE_TYPE_CHAR>
 
 What Unix would call a "character special file", that is, a device that
-works on characters streams such as a printer port or a console.
+works on character streams such as a printer port or a console.
 
 =item C<FILE_TYPE_PIPE>
 
@@ -1147,11 +1250,11 @@ set.
 
 For each currently defined drive letter, a C<'\0'>-terminated string
 of the path to the root of its file system is constructed.  All of
-these strings are concatenated into single larger string and an extra
-terminating C<'\0'> is added.  This larger string is returned in
-C<$osBuffer>.  Note that this includes drive letters that have been
-defined but that have not file system, such as drive letters assigned
-to unformatted partitions.
+these strings are concatenated into a single larger string and an
+extra terminating C<'\0'> is added.  This larger string is returned
+in C<$osBuffer>.  Note that this includes drive letters that have
+been defined but that have no file system, such as drive letters
+assigned to unformatted partitions.
 
 C<$lBufSize> is the size of the buffer to allocate to store this
 list of strings.  C<26*4+1> is always sufficient and should usually
@@ -1166,21 +1269,43 @@ For example, on a poorly equipped computer,
 
     GetLogicalDriveStrings( 4*26+1, $osBuffer );
 
-might set C<$osBuffer> to C<"A:\\\0C:\\\0\0"> [which is the same
-as C<join "", 'A',':','\\','\0', 'C',':','\\','\0', '\0'>].
+might set C<$osBuffer> to the 9-character string, C<"A:\\\0C:\\\0\0">.
+
+=item GetHandleInformation
+
+=item C<GetHandleInformation( $hObject, $ouFlags )>
+
+Retrieves the flags associated with a Win32 native file handle or object
+handle.
+
+C<$hObject> is an open Win32 native file handle or an open Win32 native
+handle to some other type of object.
+
+C<$ouFlags> will be set to an unsigned value having zero or more of
+the bits C<HANDLE_FLAG_INHERIT> and C<HANDLE_FLAG_PROTECT_FROM_CLOSE>
+set.  See the C<":HANDLE_FLAG_"> export class for the meanings of these
+bits.
 
 =item GetOsFHandle
 
 =item C<$hNativeHandle= GetOsFHandle( FILE )>
 
 Takes a Perl file handle [like C<STDIN>] and returns the Win32 native
-file handle associated with it.  See C<FdGetOsFHandle> for more information.
+file handle associated with it.  See C<FdGetOsFHandle> for more
+information about Win32 native file handles.
+
+C<$hNativeHandle> is set to a false value [and C<lastFileError()> and
+C<$^E> are set] if C<GetOsFHandle> fails.    C<GetOsFHandle> returns
+C<"0 but true"> in the impossible(?) case of the handle having a value
+of C<0>.
 
 =item GetVolumeInformation
 
 =item C<GetVolumeInformation( $sRootPath, $osVolName, $lVolName, $ouSerialNum, $ouMaxNameLen, $ouFsFlags, $osFsType, $lFsType )>
 
-Gets information about a file system volume.
+Gets information about a file system volume, returning a true
+value if successful.  On failure, returns a false value and sets
+C<fileLastError()> and C<$^E>.
 
 C<$sRootPath> is a string specifying the path to the root of the file system,
 for example, C<"C:/">.
@@ -1223,7 +1348,7 @@ ignored.
 
 =item C<FS_UNICODE_STORED_ON_DISK>
 
-The file system perserves Unicode in file names [true for "NTFS"].
+The file system preserves Unicode in file names [true for "NTFS"].
 
 =item C<FS_PERSISTENT_ACLS>
 
@@ -1270,7 +1395,9 @@ C<$ivPartitonType> is as for C<IsRecognizedPartition>.
 
 Renames a file or directory.  C<$sOldName> is the name of the existing
 file or directory that is to be renamed.  C<$sNewName> is the new name
-to give the file or directory.
+to give the file or directory.  Returns a true value if the move
+succeeds.  For failure, returns a false value and sets
+C<fileLastErorr()> and C<$^E> to the reason for the failure.
 
 Files can be "renamed" between file systems and the file contents and
 some attributes will be moved.  Directories can only be renamed within
@@ -1283,7 +1410,9 @@ C<$sNewName>, then C<MoveFile> will fail.
 
 Renames a file or directory.  C<$sOldName> is the name of the existing
 file or directory that is to be renamed.  C<$sNewName> is the new name
-to give the file or directory.
+to give the file or directory.  Returns a true value if the move
+succeeds.  For failure, returns a false value and sets
+C<fileLastErorr()> and C<$^E> to the reason for the failure.
 
 C<$uFlags> is an unsigned value with zero or more of the following bits set:
 
@@ -1291,9 +1420,9 @@ C<$uFlags> is an unsigned value with zero or more of the following bits set:
 
 =item C<MOVEFILE_REPLACE_EXISTING>
 
-If this bit is set and a file or directory named C<$sNewName> already
-exists, then it will be replaced by C<$sOldName>.  If this bit is not
-set then C<MoveFileEx> will fail rather than replace an existing
+If this bit is set and a file [but not a directory] named C<$sNewName>
+already exists, then it will be replaced by C<$sOldName>.  If this bit
+is not set then C<MoveFileEx> will fail rather than replace an existing
 C<$sNewName>.
 
 =item C<MOVEFILE_COPY_ALLOWED>
@@ -1334,6 +1463,9 @@ forcing a buffer flush at the end of the copy operation.
 
 Opens a Perl file handle based on an already open Win32 native
 file handle [much like C's C<fdopen()> does with a file descriptor].
+Returns a true value if the open operation succeeded.  For failure,
+returns a false value and sets C<$!> [and possibly C<fileLastError()>
+and C<$^E>] to the reason for the failure.
 
 C<FILE> is a Perl file handle [in any of the supported forms, a
 bareword, a string, a typeglob, or a reference to a typeglob] that
@@ -1341,7 +1473,7 @@ will be opened.  If C<FILE> is already open, it will automatically
 be closed before it is reopened.
 
 C<$hNativeHandle> is an open Win32 native file handle, probably the
-return value from C<CreateFile>.
+return value from C<CreateFile> or C<createFile>.
 
 C<$sMode> is string of zero or more letters from C<"rwatb">.  These
 are translated into a combination C<O_RDONLY> [C<"r">], C<O_WRONLY>
@@ -1354,18 +1486,17 @@ Also, a C<"r"> and/or C<"w"> in C<$sMode> is used to decide how the
 file descriptor is converted into a Perl file handle, even though this
 doesn't appear to make a difference.  One of the following is used:
 
-    open( FILE, "<&=".$ivFd )
-    open( FILE, ">&=".$ivFd )
-    open( FILE, "+<&=".$ivFd )
+    open( FILE, "<&=".$ivFd )	# "r" w/o "w"
+    open( FILE, ">&=".$ivFd )	# "w" w/o "r"
+    open( FILE, "+<&=".$ivFd )	# both "r" and "w"
 
 C<OsFHandleOpen> eventually calls the Win32-specific C routine
 C<_open_osfhandle()> or Perl's "improved" version called
 C<win32_open_osfhandle()>.  Prior to Perl5.005, C's
 C<_open_osfhandle()> is called which will fail if
-C<GetFileType($hNativeHandle)> would return C<FILE_TYPE_UNKNOWN>. 
-For Perl5.005 and later, C<OsFHandleOpen> calls
-C<win32_open_osfhandle()> from the Perl DLL which doesn't have
-this restriction.
+C<GetFileType($hNativeHandle)> would return C<FILE_TYPE_UNKNOWN>.  For
+Perl5.005 and later, C<OsFHandleOpen> calls C<win32_open_osfhandle()>
+from the Perl DLL which doesn't have this restriction.
 
 =item OsFHandleOpenFd
 
@@ -1384,6 +1515,10 @@ restriction.
 C<$uMode> the logical combination of zero or more C<O_*> constants
 exported by the C<Fcntl> module.  Currently only C<O_APPEND> and
 C<O_TEXT> have any significance.
+
+C<$ivFD> will be non-negative if the open operation was successful. 
+For failure, C<-1> is returned and C<$!> [and possibly
+C<fileLastError()> and C<$^E>] is set to the reason for the failure.
 
 =item QueryDosDevice
 
@@ -1411,17 +1546,19 @@ C<$olTargetLen> is set to the number of bytes written to
 C<$osTargetPath> but you can also use C<length($osTargetPath)>
 to determine this.
 
-For failure, C<0> is returned and C<$^E> is set to the reason for the
-failure.
+For failure, C<0> is returned and C<fileLastError()> and C<$^E> are
+set to the reason for the failure.
 
 =item ReadFile
 
 =item C<ReadFile( $hFile, $opBuffer, $lBytes, $olBytesRead, $pOverlapped )>
 
-Reads bytes from a file or file-like device.
+Reads bytes from a file or file-like device.  Returns a true value if
+the read operation was successful.  For failure, returns a false value
+and sets C<fileLastError()> and C<$^E> for the reason for the failure.
 
-C<$hFile> is a Win32 native file handle open to the file or device to
-read from.
+C<$hFile> is a Win32 native file handle that is already open to the
+file or device to read from.
 
 C<$opBuffer> will be set to a string containing the bytes read.
 
@@ -1433,7 +1570,7 @@ value to be passed to the underlying Win32 C<ReadFile> API.  However,
 a leading C<"="> will be silently ignored, even if Perl warnings are
 enabled.
 
-if C<$olBytesRead> is not C<[]>, it will be set to the actual number
+If C<$olBytesRead> is not C<[]>, it will be set to the actual number
 of bytes read, though C<length($opBuffer)> can also be used to
 determine this.
 
@@ -1462,6 +1599,9 @@ whether the critical error is returned to the process, is ignored, or
 the offending operation is retried.
 
 This affects the C<CreateFile> and C<GetVolumeInformation> calls.
+
+Setting this bit is useful for allowing you to check whether a floppy
+diskette is in the floppy drive.
 
 =item C<SEM_NOALIGNMENTFAULTEXCEPT>
 
@@ -1510,8 +1650,8 @@ the end of the file, respectively.
 C<$ivOffset> is [if C<$ioivOffsetHigh> is C<[]>] the offset [in bytes]
 to the new file position from the position specified via
 C<$uFromWhere>.  If C<$ioivOffsetHigh> is not C<[]>, then C<$ivOffset>
-is treated is converted to an unsigned value to be used as the
-low-order 4 bytes of the offset.
+is converted to an unsigned value to be used as the low-order 4 bytes
+of the offset.
 
 C<$ioivOffsetHigh> can be C<[]> [for C<NULL>] to indicate that you are
 only specifying a 4-byte offset and the resulting file position will
@@ -1524,18 +1664,56 @@ failure, but if C<$ioivOffsetHigh> is not C<[]>, you would also have
 to check C<$^E> to determine whether C<0xFFFFFFFF> indicates an error
 or not.  C<Win32API::File::SetFilePointer> does this checking for you
 and returns a false value if and only if the underlying
-C<SetFilePointer> failed.  For this reason, C<$uNewPos> is set to C<"0
-but true"> if you set the file pointer to the beginning of the file
-[or any position with 0 for the low-order 4 bytes].
+C<SetFilePointer> failed.  For this reason, C<$uNewPos> is set to
+C<"0 but true"> if you set the file pointer to the beginning of the
+file [or any position with 0 for the low-order 4 bytes].
+
+So the return value will be true if the seek operation was successful.
+For failure, a false value is returned and C<fileLastError()> and
+C<$^E> are set to the reason for the failure.
+
+=item SetHandleInformation
+
+=item C<SetHandleInformation( $hObject, $uMask, $uFlags )>
+
+Sets the flags associated with a Win32 native file handle or object
+handle.  Returns a true value if the operation was successful.  For
+failure, returns a false value and sets C<fileLastError()> and C<$^E>
+for the reason for the failure.
+
+C<$hObject> is an open Win32 native file handle or an open Win32 native
+handle to some other type of object.
+
+C<$uMask> is an unsigned value having one or more of the bits
+C<HANDLE_FLAG_INHERIT> and C<HANDLE_FLAG_PROTECT_FROM_CLOSE> set.
+Only bits set in C<$uMask> will be modified by C<SetHandleInformation>.
+
+C<$uFlags> is an unsigned value having zero or more of the bits
+C<HANDLE_FLAG_INHERIT> and C<HANDLE_FLAG_PROTECT_FROM_CLOSE> set.
+For each bit set in C<$uMask>, the cooresponding bit in the handle's
+flags is set to the value of the cooresponding bit in C<$uFlags>.
+
+If C<$uOldFlags> were the value of the handle's flags before the
+call to C<SetHandleInformation>, then the value of the handle's
+flags afterward would be:
+
+    ( $uOldFlags & ~$uMask ) | ( $uFlags & $uMask )
+
+[at least as far as the C<HANDLE_FLAG_INHERIT> and
+C<HANDLE_FLAG_PROTECT_FROM_CLOSE> bits are concerned.]
+
+See the C<":HANDLE_FLAG_"> export class for the meanings of these bits.
 
 =item WriteFile
 
 =item C<WriteFile( $hFile, $pBuffer, $lBytes, $ouBytesWritten, $pOverlapped )>
 
-Write bytes to a file or file-like device.
+Write bytes to a file or file-like device.  Returns a true value if
+the operation was successful.  For failure, returns a false value and
+sets C<fileLastError()> and C<$^E> for the reason for the failure.
 
-C<$hFile> is a Win32 native file handle open to the file or device to
-write to.
+C<$hFile> is a Win32 native file handle that is already open to the
+file or device to be written to.
 
 C<$pBuffer> is a string containing the bytes to be written.
 
@@ -1548,7 +1726,7 @@ warnings are enabled.
 C<$ouBytesWritten> will be set to the actual number of bytes written
 unless you specify it as C<[]>.
 
-C<$pOverlapped> is C<[]> or is a C<OVERLAPPED> structure packed
+C<$pOverlapped> is C<[]> or is an C<OVERLAPPED> structure packed
 into a string.  This is only useful if C<$hFile> was opened with
 the C<FILE_FLAG_OVERLAPPED> flag set.
 
@@ -1651,7 +1829,7 @@ as number of  C<WCHAR>s.
 Miscellaneous constants.  Used for the C<$uCreate> argument of
 C<CreateFile> or the C<$uFromWhere> argument of C<SetFilePointer>.
 Plus C<INVALID_HANDLE_VALUE>, which you usually won't need to check
-for since C<CreateFile> translates it into a false value.
+for since most routines translate it into a false value.
 
 	CREATE_ALWAYS		CREATE_NEW		OPEN_ALWAYS
 	OPEN_EXISTING		TRUNCATE_EXISTING	INVALID_HANDLE_VALUE
@@ -1730,6 +1908,27 @@ argument to C<GetVolumeInformation>.
 	FS_CASE_IS_PRESERVED		FS_CASE_SENSITIVE
 	FS_UNICODE_STORED_ON_DISK	FS_PERSISTENT_ACLS 
 	FS_FILE_COMPRESSION		FS_VOL_IS_COMPRESSED
+
+=item C<":HANDLE_FLAG_">
+
+Flag bits modifying the behavior of an object handle and accessed via
+C<GetHandleInformation> and C<SetHandleInformation>.
+
+=over
+
+=item HANDLE_FLAG_INHERIT
+
+If this bit is set, then children of this process who inherit handles
+[that is, processes created by calls to the Win32 C<CreateProcess> API
+with the C<bInheritHandles> parameter specified as C<TRUE>], will inherit
+this particular object handle.
+
+=item HANDLE_FLAG_PROTECT_FROM_CLOSE
+
+If this bit is set, then calls to C<CloseHandle> against this handle
+will be ignored, leaving the handle open and usable.
+
+=back
 
 =item C<":IOCTL_STORAGE_">
 
@@ -1836,22 +2035,23 @@ The number of bytes in each sector.
 
 =item C<":IOCTL_DISK_">
 
-I/O control operations for disk devices.  Used in the
-C<$uIoControlCode> argument to C<DeviceIoControl>.  Most of these
-are to be used on physical drive devices like C<"//./PhysicalDrive0">.
-However, C<IOCTL_DISK_GET_PARTITION_INFO> and
-C<IOCTL_DISK_SET_PARTITION_INFO> should only be used on a
-single-partition device like C<"//./C:">.
+I/O control operations for disk devices.  Used in the C<$uIoControlCode>
+argument to C<DeviceIoControl>.  Most of these are to be used on
+physical drive devices like C<"//./PhysicalDrive0">.  However,
+C<IOCTL_DISK_GET_PARTITION_INFO> and C<IOCTL_DISK_SET_PARTITION_INFO>
+should only be used on a single-partition device like C<"//./C:">.  Also,
+C<IOCTL_DISK_GET_MEDIA_TYPES> is documented as having been superceded but
+is still useful when used on a floppy device like C<"//./A:">.
 
-Includes C<IOCTL_DISK_GET_DRIVE_GEOMETRY>,
-C<IOCTL_DISK_GET_PARTITION_INFO>, C<IOCTL_DISK_SET_PARTITION_INFO>,
-C<IOCTL_DISK_GET_DRIVE_LAYOUT>, C<IOCTL_DISK_SET_DRIVE_LAYOUT>,
-C<IOCTL_DISK_VERIFY>, C<IOCTL_DISK_FORMAT_TRACKS>,
-C<IOCTL_DISK_REASSIGN_BLOCKS>, C<IOCTL_DISK_PERFORMANCE>,
-C<IOCTL_DISK_IS_WRITABLE>, C<IOCTL_DISK_LOGGING>,
-C<IOCTL_DISK_FORMAT_TRACKS_EX>, C<IOCTL_DISK_HISTOGRAM_STRUCTURE>,
+Includes C<IOCTL_DISK_FORMAT_TRACKS>, C<IOCTL_DISK_FORMAT_TRACKS_EX>,
+C<IOCTL_DISK_GET_DRIVE_GEOMETRY>, C<IOCTL_DISK_GET_DRIVE_LAYOUT>,
+C<IOCTL_DISK_GET_MEDIA_TYPES>, C<IOCTL_DISK_GET_PARTITION_INFO>,
 C<IOCTL_DISK_HISTOGRAM_DATA>, C<IOCTL_DISK_HISTOGRAM_RESET>,
-C<IOCTL_DISK_REQUEST_STRUCTURE>, and C<IOCTL_DISK_REQUEST_DATA>.
+C<IOCTL_DISK_HISTOGRAM_STRUCTURE>, C<IOCTL_DISK_IS_WRITABLE>,
+C<IOCTL_DISK_LOGGING>, C<IOCTL_DISK_PERFORMANCE>,
+C<IOCTL_DISK_REASSIGN_BLOCKS>, C<IOCTL_DISK_REQUEST_DATA>,
+C<IOCTL_DISK_REQUEST_STRUCTURE>, C<IOCTL_DISK_SET_DRIVE_LAYOUT>,
+C<IOCTL_DISK_SET_PARTITION_INFO>, and C<IOCTL_DISK_VERIFY>.
 
 =over
 
@@ -1996,6 +2196,13 @@ SCSI Target ID of the disk gets changed.
 
 See C<IOCTL_DISK_GET_PARTITION_INFORMATION> for information on the
 remaining these fields.
+
+=item C<IOCTL_DISK_GET_MEDIA_TYPES>
+
+Is supposed to be superseded by C<IOCTL_STORAGE_GET_MEDIA_TYPES> but
+is still useful for determining the types of floppy diskette formats
+that can be produced by a given floppy drive.  See
+F<ex/FormatFloppy.plx> for an example.
 
 =item C<IOCTL_DISK_SET_DRIVE_LAYOUT>
 
@@ -2175,15 +2382,15 @@ Format is unknown.
 
 =item C<F5_1Pt2_512>
 
-5.25" floppy, 1.2MB total space, 512 bytes/sector.
+5.25" floppy, 1.2MB [really 1,200KB] total space, 512 bytes/sector.
 
 =item C<F3_1Pt44_512>
 
-3.5" floppy, 1.44MB total space, 512 bytes/sector.
+3.5" floppy, 1.44MB [really 1,440KB] total space, 512 bytes/sector.
 
 =item C<F3_2Pt88_512>
 
-3.5" floppy, 2.88MB total space, 512 bytes/sector.
+3.5" floppy, 2.88MB [really 2,880KB] total space, 512 bytes/sector.
 
 =item C<F3_20Pt8_512>
 

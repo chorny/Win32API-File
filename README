@@ -1,17 +1,21 @@
-Win32API::File v0.07 -- Low-level access to Win32 API calls for files.
+Win32API::File v0.08 -- Low-level access to Win32 API calls for files.
 
-This binary distribution is for use with the old binary distribution
-of Perl5.004_02 from Gurusamy Sarathy.
+New to v0.08:
+
+	GetHandleInformation	SetHandleInformation
+	HANDLE_FLAG_INHERIT	HANDLE_FLAG_PROTECT_FROM_CLOSE
+	fileConstant		fileLastError
 
 Low-level and full-power access to the following routines are provided:
 
 	CloseHandle		CopyFile		CreateFile
 	DefineDosDevice		DeleteFile		DeviceIoControl
-	GetDriveType		GetFileType		GetLogicalDrives
-	GetLogicalDriveStrings	GetVolumeInformation	IsRecognizedPartition
-	IsContainerPartition	MoveFile		MoveFileEx
-	QueryDosDevice		ReadFile		SetFilePointer
-	SetErrorMode		WriteFile
+	GetDriveType		GetFileType		GetHandleInformation
+	GetLogicalDrives	GetLogicalDriveStrings	GetVolumeInformation
+	IsRecognizedPartition	IsContainerPartition	MoveFile
+	MoveFileEx		QueryDosDevice		ReadFile
+	SetFilePointer		SetErrorMode		SetHandleInformation
+	WriteFile
 
 Plus the Unicode versions:
 
@@ -29,14 +33,16 @@ least the Perl run-time library wrappers for them] is provided:
 
 The following Perl-friendly wrappers and helper functions are also provided:
 
-	OsFHandleOpen		GetOsFHandle
-	attrLetsToBits		createFile		getLogicalDrives
+	OsFHandleOpen		GetOsFHandle		attrLetsToBits
+	createFile		fileConstant		fileLastError
+	getLogicalDrives
 
 Plus the following constants:
 
 	CREATE_ALWAYS		CREATE_NEW		FILE_BEGIN
 	FILE_CURRENT		FILE_END		INVALID_HANDLE_VALUE
 	OPEN_ALWAYS		OPEN_EXISTING		TRUNCATE_EXISTING
+
 	DDD_EXACT_MATCH_ON_REMOVE			DDD_RAW_TARGET_PATH
 	DDD_REMOVE_DEFINITION
 
@@ -73,19 +79,21 @@ Plus the following constants:
 	FS_UNICODE_STORED_ON_DISK	FS_PERSISTENT_ACLS 
 	FS_FILE_COMPRESSION		FS_VOL_IS_COMPRESSED
 
-	IOCTL_STORAGE_CHECK_VERIFY		IOCTL_STORAGE_MEDIA_REMOVAL
-	IOCTL_STORAGE_EJECT_MEDIA		IOCTL_STORAGE_LOAD_MEDIA
-	IOCTL_STORAGE_RESERVE			IOCTL_STORAGE_RELEASE
-	IOCTL_STORAGE_FIND_NEW_DEVICES		IOCTL_STORAGE_GET_MEDIA_TYPES
+	HANDLE_FLAG_INHERIT		HANDLE_FLAG_PROTECT_FROM_CLOSE
 
-	IOCTL_DISK_GET_DRIVE_GEOMETRY		IOCTL_DISK_GET_PARTITION_INFO
-	IOCTL_DISK_SET_PARTITION_INFO		IOCTL_DISK_GET_DRIVE_LAYOUT
-	IOCTL_DISK_SET_DRIVE_LAYOUT		IOCTL_DISK_VERIFY
-	IOCTL_DISK_FORMAT_TRACKS		IOCTL_DISK_REASSIGN_BLOCKS
-	IOCTL_DISK_PERFORMANCE			IOCTL_DISK_IS_WRITABLE
-	IOCTL_DISK_LOGGING			IOCTL_DISK_FORMAT_TRACKS_EX
-	IOCTL_DISK_HISTOGRAM_STRUCTURE		IOCTL_DISK_HISTOGRAM_DATA
-	IOCTL_DISK_HISTOGRAM_RESET		IOCTL_DISK_REQUEST_STRUCTURE
+	IOCTL_STORAGE_CHECK_VERIFY	IOCTL_STORAGE_MEDIA_REMOVAL
+	IOCTL_STORAGE_EJECT_MEDIA	IOCTL_STORAGE_LOAD_MEDIA
+	IOCTL_STORAGE_RESERVE		IOCTL_STORAGE_RELEASE
+	IOCTL_STORAGE_FIND_NEW_DEVICES	IOCTL_STORAGE_GET_MEDIA_TYPES
+
+	IOCTL_DISK_GET_DRIVE_GEOMETRY	IOCTL_DISK_GET_PARTITION_INFO
+	IOCTL_DISK_SET_PARTITION_INFO	IOCTL_DISK_GET_DRIVE_LAYOUT
+	IOCTL_DISK_SET_DRIVE_LAYOUT	IOCTL_DISK_VERIFY
+	IOCTL_DISK_FORMAT_TRACKS	IOCTL_DISK_REASSIGN_BLOCKS
+	IOCTL_DISK_PERFORMANCE		IOCTL_DISK_IS_WRITABLE
+	IOCTL_DISK_LOGGING		IOCTL_DISK_FORMAT_TRACKS_EX
+	IOCTL_DISK_HISTOGRAM_STRUCTURE	IOCTL_DISK_HISTOGRAM_DATA
+	IOCTL_DISK_HISTOGRAM_RESET	IOCTL_DISK_REQUEST_STRUCTURE
 	IOCTL_DISK_REQUEST_DATA
 
 	GENERIC_ALL			GENERIC_EXECUTE
