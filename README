@@ -1,5 +1,9 @@
 Win32API::File v0.07 -- Low-level access to Win32 API calls for files.
 
+This binary distribution is for use with ActivePerl versions near
+version 5.005_03.  For much newer versions of Perl, you should
+request a PPM version of this package from http://www.ActiveState.com.
+
 Low-level and full-power access to the following routines are provided:
 
 	CloseHandle		CopyFile		CreateFile
