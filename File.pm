@@ -7,7 +7,7 @@ use Carp;
 use Fcntl qw( O_RDONLY O_RDWR O_WRONLY O_APPEND O_BINARY O_TEXT );
 use vars qw( $VERSION @ISA $AUTOLOAD );
 use vars qw( @EXPORT @EXPORT_OK @EXPORT_FAIL %EXPORT_TAGS );
-$VERSION= '0.06';
+$VERSION= '0.07';
 
 require Exporter;
 require DynaLoader;
@@ -21,21 +21,23 @@ require DynaLoader;
     Func =>	[qw(
 	attrLetsToBits		createFile		getLogicalDrives
 	CloseHandle		CopyFile		CreateFile
-	DefineDosDevice		DeviceIoControl		FdGetOsFHandle
-	GetDriveType		GetFileType		GetLogicalDrives
-	GetLogicalDriveStrings	GetOsFHandle		GetVolumeInformation
-	IsRecognizedPartition	IsContainerPartition	MoveFile
-	MoveFileEx		OsFHandleOpen		OsFHandleOpenFd
-	QueryDosDevice		ReadFile		SetFilePointer
-	SetErrorMode		WriteFile )],
+	DefineDosDevice		DeleteFile		DeviceIoControl
+	FdGetOsFHandle		GetDriveType		GetFileType
+	GetLogicalDrives	GetLogicalDriveStrings	GetOsFHandle
+	GetVolumeInformation	IsRecognizedPartition	IsContainerPartition
+	MoveFile		MoveFileEx		OsFHandleOpen
+	OsFHandleOpenFd		QueryDosDevice		ReadFile
+	SetFilePointer		SetErrorMode		WriteFile )],
     FuncA =>	[qw(
 	CopyFileA		CreateFileA		DefineDosDeviceA
-	GetDriveTypeA		GetLogicalDriveStringsA GetVolumeInformationA
-	MoveFileA		MoveFileExA		QueryDosDeviceA )],
+	DeleteFileA		GetDriveTypeA		GetLogicalDriveStringsA
+	GetVolumeInformationA	MoveFileA		MoveFileExA
+	QueryDosDeviceA )],
     FuncW =>	[qw(
 	CopyFileW		CreateFileW		DefineDosDeviceW
-	GetDriveTypeW		GetLogicalDriveStringsW	GetVolumeInformationW
-	MoveFileW		MoveFileExW		QueryDosDeviceW )],
+	DeleteFileW		GetDriveTypeW		GetLogicalDriveStringsW
+	GetVolumeInformationW	MoveFileW		MoveFileExW
+	QueryDosDeviceW )],
     Misc =>		[qw(
 	CREATE_ALWAYS		CREATE_NEW		FILE_BEGIN
 	FILE_CURRENT		FILE_END		INVALID_HANDLE_VALUE
@@ -185,6 +187,7 @@ bootstrap Win32API::File $VERSION;
 sub CopyFile			{ &CopyFileA; }
 sub CreateFile			{ &CreateFileA; }
 sub DefineDosDevice		{ &DefineDosDeviceA; }
+sub DeleteFile			{ &DeleteFileA; }
 sub GetDriveType		{ &GetDriveTypeA; }
 sub GetLogicalDriveStrings	{ &GetLogicalDriveStringsA; }
 sub GetVolumeInformation	{ &GetVolumeInformationA; }
@@ -192,15 +195,19 @@ sub MoveFile			{ &MoveFileA; }
 sub MoveFileEx			{ &MoveFileExA; }
 sub QueryDosDevice		{ &QueryDosDeviceA; }
 
-sub OsFHandleOpen (*@) {
+sub OsFHandleOpen {
     if(  3 != @_  ) {
 	croak 'Win32API::File Usage:  ',
 	      'OsFHandleOpen(FILE,$hNativeHandle,"rwatb")';
     }
     my( $fh, $osfh, $access )= @_;
-#    if(  ! ref($osfh)  &&  $osfh !~ /('|::)/  ) {
-#	$osfh= caller() . "::" . $osfh;
-#    }
+    if(  ! ref($fh)  ) {
+	if(  $fh !~ /('|::)/  ) {
+	    $fh= caller() . "::" . $fh;
+	}
+	no strict "refs";
+	$fh= \*{$fh};
+    }
     my( $mode, $pref );
     if(  $access =~ /r/i  ) {
 	if(  $access =~ /w/i  ) {
@@ -235,11 +242,18 @@ sub OsFHandleOpen (*@) {
     return  open( $fh, $pref."&=".$fd );
 }
 
-sub GetOsFHandle (*) {
+sub GetOsFHandle {
     if(  1 != @_  ) {
 	croak 'Win32API::File Usage:  $OsFHandle= GetOsFHandle(FILE)';
     }
     my( $file )= @_;
+    if(  ! ref($file)  ) {
+	if(  $file !~ /('|::)/  ) {
+	    $file= caller() . "::" . $file;
+	}
+	no strict "refs";
+	$file= \*{$file};
+    }
     my( $fd )= fileno($file);
     if(  ! defined( $fd )  ) {
 	if(  $file =~ /^\d+\Z/  ) {
@@ -333,7 +347,8 @@ sub createFile
     }
     if(  $create =~ /^[ktn ce]*$/  ) {
         local( $_ )= $create;
-        my( $k, $t, $n, $c, $e )= ( /k/i, /t/i, /n/i, /c/i, /e/i );
+        my( $k, $t, $n, $c, $e )= ( scalar(/k/i), scalar(/t/i),
+	  scalar(/n/i), scalar(/c/i), scalar(/e/i) );
 	if(  1 < $k + $t + $n  ) {
 	    croak "Win32API::File::createFile: \$create must not use ",
 	      qq<more than one of "k", "t", and "n" ($create)>;
@@ -448,12 +463,12 @@ C<":SEM_">, and C<":PARTITION_">.
 
 The basic function names: C<attrLetsToBits>, C<createFile>,
 C<getLogicalDrives>, C<CloseHandle>, C<CopyFile>, C<CreateFile>,
-C<DefineDosDevice>, C<DeviceIoControl>, C<FdGetOsFHandle>, C<GetDriveType>,
-C<GetFileType>, C<GetLogicalDrives>, C<GetLogicalDriveStrings>,
-C<GetOsFHandle>, C<GetVolumeInformation>, C<IsRecognizedPartition>,
-C<IsContainerPartition>, C<MoveFile>, C<MoveFileEx>, C<OsFHandleOpen>,
-C<OsFHandleOpenFd>, C<QueryDosDevice>, C<ReadFile>, C<SetFilePointer>,
-C<SetErrorMode>, and C<WriteFile>.
+C<DeleteFile>, C<DefineDosDevice>, C<DeviceIoControl>,
+C<FdGetOsFHandle>, C<GetDriveType>, C<GetFileType>, C<GetLogicalDrives>,
+C<GetLogicalDriveStrings>, C<GetOsFHandle>, C<GetVolumeInformation>,
+C<IsRecognizedPartition>, C<IsContainerPartition>, C<MoveFile>,
+C<MoveFileEx>, C<OsFHandleOpen>, C<OsFHandleOpenFd>, C<QueryDosDevice>,
+C<ReadFile>, C<SetFilePointer>, C<SetErrorMode>, and C<WriteFile>.
 
 =over
 
@@ -975,6 +990,17 @@ to add or delete.  For C<DDD_RAW_TARGET_PATH>, these usually start
 with C<"\\Devices\\">.  If the C<DDD_RAW_TARGET_PATH> bit is not
 set, then C<$sTargetPath> is just an ordinary path to some file or
 directory, providing the functionality of the B<subst> command.
+
+=item DeleteFile
+
+=item C<DeleteFile( $sFileName )>
+
+Deletes the named file.  Compared to Perl's C<unlink>, C<DeleteFile>
+has the advantage of not deleting read-only files.  For E<some>
+versions of Perl, C<unlink> silently calls C<chmod> whether it needs
+to or not before deleting the file so that files that you have
+protected by marking them as read-only are not always protected from
+Perl's C<unlink>.
 
 =item DeviceIoControl
 
@@ -1536,6 +1562,7 @@ version without the trailing "A".
 	CopyFileA
 	CreateFileA
 	DefineDosDeviceA
+	DeleteFileA
 	GetDriveTypeA
 	GetLogicalDriveStringsA
 	GetVolumeInformationA
@@ -1569,6 +1596,12 @@ C<$swPath> is Unicode.
 =item C<DefineDosDeviceW( $uFlags, $swDosDeviceName, $swTargetPath )>
 
 C<$swDosDeviceName> and C<$swTargetPath> are Unicode.
+
+=item DeleteFileW
+
+=item C<DeleteFileW( $swFileName )>
+
+C<$swFileName> is Unicode.
 
 =item GetDriveTypeW
 

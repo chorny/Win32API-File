@@ -4,16 +4,17 @@
 extern "C" {
 #endif
 
+//#ifdef WORD
+//# undef WORD	/* Perl defines this but Win32 uses it as a typedef */
+//#endif
+#include <windows.h>
+#include <winioctl.h>
+#include <malloc.h>
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "patchlevel.h"
 #include "XSUB.h"
-#ifdef WORD
-# undef WORD	/* Perl defines this but Win32 uses it as a typedef */
-#endif
-#include <windows.h>
-#include <winioctl.h>
-#include <malloc.h>
 
 #if PATCHLEVEL < 5
 /* Perl 5.005 added win32_get_osfhandle/win32_open_osfhandle */
@@ -1171,6 +1172,16 @@ DefineDosDeviceW( uFlags, swDosDeviceName, swTargetPath )
 	DWORD	uFlags
 	WCHAR *	swDosDeviceName
 	WCHAR *	swTargetPath
+
+
+BOOL
+DeleteFileA( sFileName )
+	char *	sFileName
+
+
+BOOL
+DeleteFileW( swFileName )
+	WCHAR *	swFileName
 
 
 BOOL

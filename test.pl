@@ -3,7 +3,7 @@
 
 ######################### We start with some black magic to print on failure.
 
-BEGIN { $|= 1; print "1..235\n"; }
+BEGIN { $|= 1; print "1..238\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Win32API::File qw(:ALL);
 $loaded = 1;
@@ -44,7 +44,7 @@ chdir( $dir )
   or  die "# Can't cd to my dir, $temp/$dir: $!\n";
 
 $h1= createFile( "ReadOnly.txt", "r", { Attributes=>"r" } );
-$ok=  ! $h1  &&  $^E =~ /not find the file/i;
+$ok=  ! $h1  &&  $^E =~ /not find the file?/i;
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 2
 if(  ! $ok  ) {   CloseHandle($h1);   unlink("ReadOnly.txt");   }
 
@@ -57,13 +57,13 @@ $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 4
 
 $h2= createFile( "ReadOnly.txt", "rcn" );
-$ok= ! $h2  &&  $^E =~ /file exists/i;
+$ok= ! $h2  &&  $^E =~ /file exists?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 5
 if(  ! $ok  ) {   CloseHandle($h2);   }
 
 $h2= createFile( "ReadOnly.txt", "rwke" );
-$ok= ! $h2  &&  $^E =~ /access is denied/i;
+$ok= ! $h2  &&  $^E =~ /access is denied?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 6
 if(  ! $ok  ) {   CloseHandle($h2);   }
@@ -99,7 +99,7 @@ $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 12
 
 $ok= ! ReadFile( $h2, $text, 80, $len, [] )
- &&  $^E =~ /handle is invalid/i;
+ &&  $^E =~ /handle is invalid?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 13
 
@@ -144,25 +144,26 @@ if(  $Debug  &&  ! $ok  ) {
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 21
 
 $ok= ! unlink( "CanWrite.txt" )
- &&  $^E =~ /used by another process/i;
+ &&  $^E =~ /used by another process?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 22
 
 close(APP);		# Also does C<CloseHandle($h2)>
+## CloseHandle( $h2 );
 CloseHandle( $h1 );
 
-$ok= ! unlink( "ReadOnly.txt" )
- &&  $^E =~ /access is denied/i;
+$ok= ! DeleteFile( "ReadOnly.txt" )
+ &&  $^E =~ /access is denied?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 23
 
 $ok= ! CopyFile( "ReadOnly.txt", "CanWrite.txt", 1 )
- &&  $^E =~ /file exists/i;
+ &&  $^E =~ /file exists?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 24
 
 $ok= ! CopyFile( "CanWrite.txt", "ReadOnly.txt", 0 )
- &&  $^E =~ /access is denied/i;
+ &&  $^E =~ /access is denied?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 25
 
@@ -177,12 +178,12 @@ $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 27
 
 $ok= ! MoveFile( "ReadOnly.txt", "CanWrite.txt" )
- &&  $^E =~ /file already exists/i;
+ &&  $^E =~ /file already exists?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 28
 
 $ok= ! MoveFileEx( "ReadOnly.txt", "CanWrite.txt", 0 )
- &&  $^E =~ /file already exists/i;
+ &&  $^E =~ /file already exists?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 29
 
@@ -192,7 +193,7 @@ $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 30
 
 $ok= ! MoveFileEx( "CanWrite.txt", "ReadOnly.cp", MOVEFILE_REPLACE_EXISTING )
- &&  $^E =~ /access is denied/i;
+ &&  $^E =~ /access is denied?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 31
 
@@ -211,14 +212,14 @@ $ok= ! unlink( "ReadOnly.cp" )
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 34
 
-$ok= ! unlink( "Moved.cp" )
- &&  $^E =~ /access is denied/i;
+$ok= ! DeleteFile( "Moved.cp" )
+ &&  $^E =~ /access is denied?/i;
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 35
 
 system( "attrib -r Moved.cp" );
 
-$ok= unlink( "Moved.cp" );
+$ok= DeleteFile( "Moved.cp" );
 $Debug && !$ok && warn "# $^E\n";
 print $ok ? "" : "not ", "ok ", ++$test, "\n";	# ok 36
 

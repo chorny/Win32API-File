@@ -4,7 +4,5 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'	=> 'Win32API::File',
     'VERSION_FROM' => 'File.pm', # finds $VERSION
-    'LIBS'	=> [''],   # e.g., '-lm' 
-    'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
-    'INC'	=> '',     # e.g., '-I/usr/include/other' 
+    ($] < 5.005 ? () : ('CAPI' => 'TRUE')),
 );

@@ -1,5 +1,17 @@
 Revision history for Perl extension Win32API::File.
 
+0.07  Tue Aug 17 13:04:54 1999
+	- Added DeleteFile().
+	- Removed prototypes from OsFHandleOpen() and GetOsFHandle() since
+	  the C<*> doesn't prevent warnings about bareword file handles and
+	  prevents the useful usage message if no arguments given.
+	- Fixed bug due to failed C<(/k/i,/t/i)> in list context returning
+	  C<()> not C<(undef,undef)> in modern versions of Perl.
+	- Change order of C<#include>s so can build with Perl5.005 and later.
+	- Fixed C<test.pl> to ignore Perl bug where C<$^E> is truncated.
+	- Turned on C<CAPI> in C<Makefile.PL> for certain versions of Perl.
+	- Updated C<README>.
+
 0.06  Tue Aug 10 20:50:21 1999
 	- Switch to new buffers.h and "Hungarian" notation!
 	- Added full documentation!
