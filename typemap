@@ -15,8 +15,10 @@ ValEntA *		T_BUF
 ValEntW *		T_BUF
 SECURITY_DESCRIPTOR *	T_BUF
 SECURITY_ATTRIBUTES *	T_BUF
+LPOVERLAPPED		T_BUF
 LONG *			T_IVBUF
 DWORD *			T_UVBUF
+LPDWORD			T_UVBUF
 oDWORD *		O_UVBUF
 HKEY *			T_UVBUFP
 oHKEY *			O_UVBUFP
@@ -34,9 +36,9 @@ T_BUF
 T_SBUF
 	grow_buf( $var,$arg, $type )
 T_IV
-	$var= null_arg($arg) ? ($type)0 : ($type)SvIV($arg)
+	$var= null_arg($arg) ? ($type)0 : INT2PTR($type,SvIV($arg))
 T_UV
-	$var= null_arg($arg) ? ($type)0 : ($type)SvUV($arg)
+	$var= null_arg($arg) ? ($type)0 : INT2PTR($type,SvUV($arg))
 O_IV
 	$var= optIV($arg)
 O_UV
@@ -102,16 +104,16 @@ T_SBUF
 	trunc_buf( RETVAL, $var,$arg );
 T_IV
 	if(  ! null_arg($arg)  &&  ! SvREADONLY($arg)  )
-	    sv_setiv( $arg, (IV)$var );
+	    sv_setiv( $arg, PTR2IV($var) );
 T_UV
 	if(  ! null_arg($arg)  &&  ! SvREADONLY($arg)  )
-	    sv_setuv( $arg, (UV)$var );
+	    sv_setuv( $arg, PTR2UV($var) );
 O_IV
 	if(  ! null_arg($arg)  )
-	    sv_setiv( $arg, (IV)$var );
+	    sv_setiv( $arg, PTR2IV($var) );
 O_UV
 	if(  ! null_arg($arg)  )
-	    sv_setuv( $arg, (UV)$var );
+	    sv_setuv( $arg, PTR2UV($var) );
 T_IVBUF
 	if(  ! null_arg($arg)  &&  ! SvREADONLY($arg)  )
 	    sv_setiv( $arg, (IV)*($var) );

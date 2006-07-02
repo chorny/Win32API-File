@@ -6,9 +6,10 @@ package ExtUtils::Myconst2perl;
 use strict;
 use Config;
 
-use base "Exporter";
-use vars qw( @EXPORT @EXPORT_OK $VERSION );
+use vars qw( @ISA @EXPORT @EXPORT_OK $VERSION );
 BEGIN {
+    require Exporter;
+    push @ISA, 'Exporter';
     @EXPORT= qw( &Myconst2perl );
     @EXPORT_OK= qw( &ParseAttribs );
     $VERSION= 1.00;

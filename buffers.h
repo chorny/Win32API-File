@@ -1,4 +1,4 @@
-/* buffers.h -- Version 1.10 */
+/* buffers.h -- Version 1.11 */
 
 /* The following abbreviations are used at start of parameter names
  * to indicate the type of data:
@@ -248,11 +248,12 @@
 #define init_buf_pl( plSize, svSize, tpSize )		STMT_START {	\
 	if(  null_arg(svSize)  )					\
 	    plSize= NULL;						\
-	else								\
+	else {								\
+	    STRLEN n_a;							\
 	    *( plSize= CAST( tpSize, TempAlloc(sizeof(*plSize)) ) )=	\
 	      autosize(svSize) ? optUV(svSize)				\
-	        : strtoul( 1+SvPV(svSize,PL_na), NULL, 10 );		\
-    } STMT_END
+	        : strtoul( 1+SvPV(svSize,n_a), NULL, 10 );		\
+	} } STMT_END
 /* In INPUT section put ": init_buf_pl($var,$arg,$type);" after var name. */
 
 /* Initialize a buffer size argument of type DWORD: */
@@ -278,10 +279,11 @@
 	if(  null_arg(svBuf)  ) {					\
 	    sBuf= NULL;							\
 	} else {							\
+	    STRLEN n_a;							\
 	    if(  NULL == plSize  )					\
 		*( plSize= CAST(tpSize,TempAlloc(sizeof(*plSize))) )= 0;\
 	    if(  ! SvOK(svBuf)  )    sv_setpvn(svBuf,"",0);		\
-	    (void) SvPV_force( svBuf, PL_na );				\
+	    (void) SvPV_force( svBuf, n_a );				\
 	    sBuf= CAST( tpBuf, lSvGROW( svBuf, *plSize ) );		\
 	    if(  autosize(svSize)  )   *plSize= SvLEN(svBuf) - 1;	\
 	    Debug(("more buf_pl( %s==0x%lX,[%s:%ld/%ld, %s==0x%lX:%ld,[%s )\n",\
@@ -295,10 +297,11 @@
 	if(  null_arg(svBuf)  ) {					\
 	    sBuf= NULL;							\
 	} else {							\
+	    STRLEN n_a;							\
 	    if(  NULL == plwSize  )					\
 		*( plwSize= CAST(tpSize,TempAlloc(sizeof(*plwSize))) )= 0;\
 	    if(  ! SvOK(svBuf)  )    sv_setpvn(svBuf,"",0);		\
-	    (void) SvPV_force( svBuf, PL_na );				\
+	    (void) SvPV_force( svBuf, n_a );				\
 	    sBuf= lwSvGROW( svBuf, *plwSize );				\
 	    if(  autosize(svSize)  )					\
 		*plwSize= SvLEN(svBuf)/sizeof(WCHAR) - 1;		\
@@ -309,8 +312,9 @@
 	if(  null_arg(svBuf)  ) {					\
 	    sBuf= NULL;							\
 	} else {							\
+	    STRLEN n_a;							\
 	    if(  ! SvOK(svBuf)  )    sv_setpvn(svBuf,"",0);		\
-	    (void) SvPV_force( svBuf, PL_na );				\
+	    (void) SvPV_force( svBuf, n_a );				\
 	    sBuf= CAST( tpBuf, lSvGROW( svBuf, lSize ) );		\
 	    if(  autosize(svSize)  )   lSize= SvLEN(svBuf) - 1;		\
 	} } STMT_END
@@ -320,8 +324,9 @@
 	if(  null_arg(svBuf)  ) {					\
 	    swBuf= NULL;						\
 	} else {							\
+	    STRLEN n_a;							\
 	    if(  ! SvOK(svBuf)  )    sv_setpvn(svBuf,"",0);		\
-	    (void) SvPV_force( svBuf, PL_na );				\
+	    (void) SvPV_force( svBuf, n_a );				\
 	    swBuf= lwSvGROW( svBuf, lwSize );				\
 	    if(  autosize(svSize)  )					\
 		lwSize= SvLEN(svBuf)/sizeof(WCHAR) - 1;			\
@@ -332,8 +337,9 @@
 	if(  null_arg(svBuf)  ) {					\
 	    pBuf= NULL;							\
 	} else {							\
+	    STRLEN n_a;							\
 	    if(  ! SvOK(svBuf)  )    sv_setpvn(svBuf,"",0);		\
-	    (void) SvPV_force( svBuf, PL_na );				\
+	    (void) SvPV_force( svBuf, n_a );				\
 	    pBuf= CAST( tpBuf, SvGROW( svBuf, sizeof(*pBuf) ) );	\
 	} } STMT_END
 
@@ -342,8 +348,9 @@
 	if(  null_arg(svBuf)  ) {					\
 	    pBuf= NULL;							\
 	} else {							\
+	    STRLEN n_a;							\
 	    if(  ! SvOK(svBuf)  )    sv_setpvn(svBuf,"",0);		\
-	    (void) SvPV_force( svBuf, PL_na );				\
+	    (void) SvPV_force( svBuf, n_a );				\
 	    pBuf= CAST( tpBuf, SvGROW( svBuf, sizeof(Type) ) );	\
 	} } STMT_END
 
@@ -352,8 +359,9 @@
 	if(  null_arg(svBuf)  ) {					\
 	    pBuf= NULL;							\
 	} else {							\
+	    STRLEN n_a;							\
 	    if(  ! SvOK(svBuf)  )    sv_setpvn(svBuf,"",0);		\
-	    (void) SvPV_force( svBuf, PL_na );				\
+	    (void) SvPV_force( svBuf, n_a );				\
 	    pBuf= CAST( tpBuf, SvGROW( svBuf, sizeof(*pBuf)*cItems ) );	\
 	} } STMT_END
 

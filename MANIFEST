@@ -1,19 +1,20 @@
 Changes
+ExtUtils/Myconst2perl.pm
 File.pm
 File.xs
 MANIFEST
 Makefile.PL
 README
 buffers.h
-const2perl.h
 cFile.h
 cFile.pc
-ppport.h
-test.pl
-typemap
-ExtUtils/Myconst2perl.pm
+const2perl.h
 ex/CopyBoot.bat
 ex/DiskGeom.plx
 ex/FormatFloppy.plx
 ex/ListDevs.plx
+ppport.h
+t/file.t
+t/tie.t
+typemap
 META.yml                                 Module meta-data (added by MakeMaker)

@@ -1,6 +1,6 @@
 Win32API::File v0.08 -- Low-level access to Win32 API calls for files.
 
-New to v0.08:
+New since v0.07:
 
 	GetHandleInformation	SetHandleInformation
 	HANDLE_FLAG_INHERIT	HANDLE_FLAG_PROTECT_FROM_CLOSE
@@ -126,7 +126,8 @@ Plus the following constants:
 	VALID_NTFT			PARTITION_NTFT
 
 Comments, additions, and bug reports are welcomed.  Please address
-technical questions that are not full bug reports to one of the Usenet
-newsgroups comp.lang.perl.modules or comp.lang.perl.moderated.
+technical questions that are not full bug reports to 
+
+http://perlmonks.org/index.pl?node=Seekers%20of%20Perl%20Wisdom
 
 Tye McQueen, tye@metronet.com, http://www.metronet.com/~tye/.

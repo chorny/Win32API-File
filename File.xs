@@ -19,12 +19,20 @@
 
 /*CONSTS_DEFINED*/
 
+#ifndef INVALID_SET_FILE_POINTER
+#   define INVALID_SET_FILE_POINTER	((DWORD)-1)
+#endif
+
 #define oDWORD DWORD
 
-#if PERL_REVISION <= 5 && PERL_VERSION < 5
-/* Perl 5.005 added win32_get_osfhandle/win32_open_osfhandle */
+#if (PERL_REVISION <= 5 && PERL_VERSION < 5) || defined(__CYGWIN__)
 # define win32_get_osfhandle _get_osfhandle
-# define win32_open_osfhandle _open_osfhandle
+# ifdef __CYGWIN__
+#  define win32_open_osfhandle(handle,mode) \
+	(Perl_croak(aTHX_ "_open_osfhandle not implemented on Cygwin!"), -1)
+# else
+#  define win32_open_osfhandle _open_osfhandle
+# endif
 # ifdef _get_osfhandle
 #  undef _get_osfhandle	/* stolen_get_osfhandle() isn't available here */
 # endif
@@ -33,6 +41,13 @@
 # endif
 #endif
 
+#ifndef XST_mUV
+# define XST_mUV(i,v)  (ST(i) = sv_2mortal(newSVuv(v))  )
+#endif
+
+#ifndef XSRETURN_UV
+# define XSRETURN_UV(v) STMT_START { XST_mUV(0,v);  XSRETURN(1); } STMT_END
+#endif
 
 #ifndef DEBUGGING
 # define	Debug(list)	/*Nothing*/
@@ -91,8 +106,11 @@ _fileLastError( uError=0 )
 BOOL
 CloseHandle( hObject )
 	HANDLE	hObject
-    CLEANUP:
+    CODE:
+        RETVAL = CloseHandle( hObject );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
@@ -100,8 +118,11 @@ CopyFileA( sOldFileName, sNewFileName, bFailIfExists )
 	char *	sOldFileName
 	char *	sNewFileName
 	BOOL	bFailIfExists
-    CLEANUP:
+    CODE:
+        RETVAL = CopyFileA( sOldFileName, sNewFileName, bFailIfExists );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
@@ -109,8 +130,11 @@ CopyFileW( swOldFileName, swNewFileName, bFailIfExists )
 	WCHAR *	swOldFileName
 	WCHAR *	swNewFileName
 	BOOL	bFailIfExists
-    CLEANUP:
+    CODE:
+        RETVAL = CopyFileW( swOldFileName, swNewFileName, bFailIfExists );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 HANDLE
@@ -130,10 +154,8 @@ CreateFileA( sPath, uAccess, uShare, pSecAttr, uCreate, uFlags, hModel )
 	    XSRETURN_NO;
 	} else if(  0 == RETVAL  ) {
 	    XSRETURN_PV( "0 but true" );
-	} else if(  (IV) RETVAL < 0  ) {
-	    XSRETURN_NV( (double) (IV) RETVAL );
 	} else {
-	    XSRETURN_IV( (IV) RETVAL );
+	    XSRETURN_UV( PTR2UV(RETVAL) );
 	}
 
 
@@ -154,10 +176,8 @@ CreateFileW( swPath, uAccess, uShare, pSecAttr, uCreate, uFlags, hModel )
 	    XSRETURN_NO;
 	} else if(  0 == RETVAL  ) {
 	    XSRETURN_PV( "0 but true" );
-	} else if(  (IV) RETVAL < 0  ) {
-	    XSRETURN_NV( (double) (IV) RETVAL );
 	} else {
-	    XSRETURN_IV( (IV) RETVAL );
+	    XSRETURN_UV( PTR2UV(RETVAL) );
 	}
 
 
@@ -166,8 +186,11 @@ DefineDosDeviceA( uFlags, sDosDeviceName, sTargetPath )
 	DWORD	uFlags
 	char *	sDosDeviceName
 	char *	sTargetPath
-    CLEANUP:
+    CODE:
+        RETVAL = DefineDosDeviceA( uFlags, sDosDeviceName, sTargetPath );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
@@ -175,22 +198,31 @@ DefineDosDeviceW( uFlags, swDosDeviceName, swTargetPath )
 	DWORD	uFlags
 	WCHAR *	swDosDeviceName
 	WCHAR *	swTargetPath
-    CLEANUP:
+    CODE:
+        RETVAL = DefineDosDeviceW( uFlags, swDosDeviceName, swTargetPath );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
 DeleteFileA( sFileName )
 	char *	sFileName
-    CLEANUP:
+    CODE:
+        RETVAL = DeleteFileA( sFileName );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
 DeleteFileW( swFileName )
 	WCHAR *	swFileName
-    CLEANUP:
+    CODE:
+        RETVAL = DeleteFileW( swFileName );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
@@ -235,39 +267,72 @@ FdGetOsFHandle( ivFd )
 DWORD
 GetDriveTypeA( sRootPath )
 	char *	sRootPath
-    CLEANUP:
+    CODE:
+        RETVAL = GetDriveTypeA( sRootPath );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 DWORD
 GetDriveTypeW( swRootPath )
 	WCHAR *	swRootPath
-    CLEANUP:
+    CODE:
+        RETVAL = GetDriveTypeW( swRootPath );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
+
+
+DWORD
+GetFileAttributesA( sPath )
+	char *	sPath
+    CODE:
+        RETVAL = GetFileAttributesA( sPath );
+	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
+
+
+DWORD
+GetFileAttributesW( swPath )
+	WCHAR *	swPath
+    CODE:
+        RETVAL = GetFileAttributesW( swPath );
+	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 DWORD
 GetFileType( hFile )
 	HANDLE	hFile
-    CLEANUP:
+    CODE:
+        RETVAL = GetFileType( hFile );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
 GetHandleInformation( hObject, ouFlags )
 	HANDLE		hObject
 	oDWORD *	ouFlags
+    CODE:
+        RETVAL = GetHandleInformation( hObject, ouFlags );
+	SaveErr( !RETVAL );
     OUTPUT:
 	RETVAL
 	ouFlags
-    CLEANUP:
-	SaveErr( !RETVAL );
 
 
 DWORD
 GetLogicalDrives()
-    CLEANUP:
+    CODE:
+        RETVAL = GetLogicalDrives();
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 DWORD
@@ -367,31 +432,43 @@ GetVolumeInformationW( swRootPath, oswVolName, lwVolName, ouSerialNum, ouMaxName
 BOOL
 IsRecognizedPartition( ivPartitionType )
 	int	ivPartitionType
-    CLEANUP:
+    CODE:
+        RETVAL = IsRecognizedPartition( ivPartitionType );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
 IsContainerPartition( ivPartitionType )
 	int	ivPartitionType
-    CLEANUP:
+    CODE:
+        RETVAL = IsContainerPartition( ivPartitionType );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
 MoveFileA( sOldName, sNewName )
 	char *	sOldName
 	char *	sNewName
-    CLEANUP:
+    CODE:
+        RETVAL = MoveFileA( sOldName, sNewName );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
 MoveFileW( swOldName, swNewName )
 	WCHAR *	swOldName
 	WCHAR *	swNewName
-    CLEANUP:
+    CODE:
+        RETVAL = MoveFileW( swOldName, swNewName );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
@@ -399,8 +476,11 @@ MoveFileExA( sOldName, sNewName, uFlags )
 	char *	sOldName
 	char *	sNewName
 	DWORD	uFlags
-    CLEANUP:
+    CODE:
+        RETVAL = MoveFileExA( sOldName, sNewName, uFlags );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
@@ -408,8 +488,11 @@ MoveFileExW( swOldName, swNewName, uFlags )
 	WCHAR *	swOldName
 	WCHAR *	swNewName
 	DWORD	uFlags
-    CLEANUP:
+    CODE:
+        RETVAL = MoveFileExW( swOldName, swNewName, uFlags );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 long
@@ -478,6 +561,32 @@ ReadFile( hFile, opBuffer, lBytes, olBytesRead, pOverlapped )
 	olBytesRead
 
 
+BOOL
+GetOverlappedResult( hFile, lpOverlapped, lpNumberOfBytesTransferred, bWait)
+	HANDLE hFile
+	LPOVERLAPPED lpOverlapped
+	LPDWORD lpNumberOfBytesTransferred
+	BOOL bWait
+    CODE:
+    	RETVAL= GetOverlappedResult( hFile, lpOverlapped,
+	 lpNumberOfBytesTransferred, bWait);
+	SaveErr( !RETVAL );
+    OUTPUT:
+    	RETVAL
+	lpOverlapped
+	lpNumberOfBytesTransferred
+
+DWORD
+GetFileSize( hFile, lpFileSizeHigh )
+	HANDLE hFile
+	LPDWORD lpFileSizeHigh
+    CODE:
+    	RETVAL= GetFileSize( hFile, lpFileSizeHigh );
+	SaveErr( NO_ERROR != GetLastError() );
+    OUTPUT:
+    	RETVAL
+	lpFileSizeHigh
+
 UINT
 SetErrorMode( uNewMode )
 	UINT	uNewMode
@@ -491,7 +600,7 @@ SetFilePointer( hFile, ivOffset, ioivOffsetHigh, uFromWhere )
 	DWORD	uFromWhere
     CODE:
 	RETVAL= SetFilePointer( hFile, ivOffset, ioivOffsetHigh, uFromWhere );
-	if(  ~0 == RETVAL  ) {
+	if(  RETVAL == INVALID_SET_FILE_POINTER && (GetLastError() != NO_ERROR)  ) {
 	    SaveErr( 1 );
 	    XST_mNO(0);
 	} else if(  0 == RETVAL  ) {
@@ -508,8 +617,11 @@ SetHandleInformation( hObject, uMask, uFlags )
 	HANDLE	hObject
 	DWORD	uMask
 	DWORD	uFlags
-    CLEANUP:
+    CODE:
+        RETVAL = SetHandleInformation( hObject, uMask, uFlags );
 	SaveErr( !RETVAL );
+    OUTPUT:
+	RETVAL
 
 
 BOOL
