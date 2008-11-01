@@ -16,5 +16,6 @@ ex/ListDevs.plx
 ppport.h
 t/file.t
 t/tie.t
+t/pod.t
 typemap
 META.yml                                 Module meta-data (added by MakeMaker)
