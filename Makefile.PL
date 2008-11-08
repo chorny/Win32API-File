@@ -24,14 +24,14 @@ WriteMakefile(
 		   },
     (  ! $Config{libperl}  ?  ()  :  ( LIBPERL_A => $Config{libperl} )  ),
     'INSTALLDIRS'   => ($] >= 5.008009 ? 'perl' : 'site'),
-#    ($ExtUtils::MakeMaker::VERSION ge '6.31'? 
-#     ('LICENSE'	=> 'perl', ) : ()),
+    ($ExtUtils::MakeMaker::VERSION ge '6.31'? 
+     ('LICENSE'	=> 'perl', ) : ()),
     ($ExtUtils::MakeMaker::VERSION ge '6.48'? 
      ('MIN_PERL_VERSION' => 5.001,) : ()),
     'PREREQ_PM'	=> {
-      'IO::File' => 0, #build
-      'File::Spec' => 0, #build
-      'Math::BigInt' => 0,
+        'IO::File' => 0, #build
+        'File::Spec' => 0, #build
+        'Math::BigInt' => 0,
     }
 );
 

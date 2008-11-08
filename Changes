@@ -1,5 +1,8 @@
 Revision history for Perl extension Win32API::File.
 
+0.1100
+        - license in Makefile.PL and README
+
 0.1001_02 by Alexandr Ciornii 2008-11-01
         - list of changes from perl 5.10
         - adaptation of core perl changes for CPAN
