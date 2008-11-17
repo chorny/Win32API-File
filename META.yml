@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Win32API-File
-version:            0.1100
+version:            0.1101
 abstract:           Low-level access to Win32 system API calls for files/dirs.
 author:
     - Tye McQueen <tye@metronet.com>
@@ -13,6 +13,7 @@ requires:
     IO::File:      0
     Math::BigInt:  0
     perl:          5.001
+    Win32:         0
 no_index:
     directory:
         - t

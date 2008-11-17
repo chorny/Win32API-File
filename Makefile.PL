@@ -32,6 +32,7 @@ WriteMakefile(
         'IO::File' => 0, #build
         'File::Spec' => 0, #build
         'Math::BigInt' => 0,
+        'Win32' => 0,
     }
 );
 

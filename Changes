@@ -1,6 +1,10 @@
 Revision history for Perl extension Win32API::File.
 
-0.1100
+0.1101 by Alexandr Ciornii 2008-11-17
+        - require Win32.pm (not core on Cygwin 5.8.8)
+        - file.t uses Win32.pm only if necessary
+
+0.1100 by Alexandr Ciornii 2008-11-08
         - license in Makefile.PL and README
 
 0.1001_02 by Alexandr Ciornii 2008-11-01
