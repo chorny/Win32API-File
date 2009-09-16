@@ -1,0 +1,9 @@
+Build.bat
+Build
+Makefile.PL
+_build
+Makefile*
+!Makefile.PL
+Win32API-File-*
+blib
+*.tmp
