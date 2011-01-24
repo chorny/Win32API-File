@@ -716,7 +716,7 @@ sub READLINE {
 	my $self = shift;
 	my $line = "";
 
-	while ((index $line, $/) == $[-1) { # read until end of line marker
+	while ((index $line, $/) == -1) { # read until end of line marker
 		my $char = $self->GETC();
 
 		last if !defined $char || $char eq '';
