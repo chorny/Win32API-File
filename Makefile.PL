@@ -33,12 +33,18 @@ WriteMakefile(
         'File::Spec' => 0, #build
         'Math::BigInt' => 0,
         'Win32' => 0,
-    }
+    },
     META_MERGE => {
         resources => {
             repository => 'http://github.com/chorny/Win32API-File',
         },
     },
+    $^O =~/win/i ? (
+        dist => {
+            TAR      => 'ptar',
+            TARFLAGS => '-c -C -f',
+        },
+    ) : (),
 );
 
 # Replacement for MakeMaker's "const2perl section" for versions
