@@ -3026,7 +3026,7 @@ None known at this time.
 
 =head1 AUTHOR
 
-Tye McQueen, tye@metronet.com, http://www.metronet.com/~tye/.
+Tye McQueen, tye@metronet.com, http://perlmonks.org/?node=tye.
 
 =head1 SEE ALSO
 
