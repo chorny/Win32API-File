@@ -16,7 +16,7 @@ BEGIN {
 	}
     }
 
-    print "1..267\n";
+    print "1..270\n";
 }
 END {print "not ok 1\n" unless $loaded;}
 

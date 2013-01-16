@@ -1,5 +1,7 @@
 Revision history for Perl extension Win32API::File.
 
+        - Constants for GetStdHandle and SetStdHandle
+
 0.1200 by Alexandr Ciornii 2011-07-01
         - Spelling fixes by Peter John Acklam
         - Upgraded Makefile.PL

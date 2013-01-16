@@ -19,6 +19,8 @@ WriteMakefile1(
 		     IFDEF => "!/[a-z\\d]/",
 		     CPLUSPLUS => 1,
 		     WRITE_PERL => 1,
+		     #PERL_FILE_LIST => ['File.pm'], #added by Chorny
+		     #C_FILE_LIST => ['File.xs'], #added by Chorny
 		     # Comment out next line to rebuild constants defs:
 		     NO_REBUILD => 1,
 		   },
@@ -91,7 +93,7 @@ $outfile:	@perlfiles  @cfiles  Makefile" . '
 	$m[-1] =~ s/^/##/gm   if  $noreb;
 	my( $key, $value );
 	while(  ( $key, $value )= each %{$hvAttr->{$module}}  ) {
-	    push @m, '-e "$$attribs{' . $key . '}= '
+	    push @m, '-e "$$attribs{' . $key . '}= ' # try {{ }} for dmake
 	      . neatvalue($value) . qq[;" \\\n\t  ];
 	    $m[-1] =~ s/^/##/gm   if  $noreb;
 	}
