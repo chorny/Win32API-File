@@ -25,7 +25,7 @@ WriteMakefile1(
 		     NO_REBUILD => 1,
 		   },
     (  ! $Config{libperl}  ?  ()  :  ( LIBPERL_A => $Config{libperl} )  ),
-    'INSTALLDIRS'   => ($] >= 5.008009 ? 'perl' : 'site'),
+    'INSTALLDIRS' => (($] >= 5.008009 and $] < 5.012) ? 'perl' : 'site'),
     'LICENSE'	=> 'perl',
     'MIN_PERL_VERSION' => 5.001,
     'PREREQ_PM'	=> {
