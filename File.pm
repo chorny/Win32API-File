@@ -3017,6 +3017,14 @@ Constants describing partition types.
 	PARTITION_PREP			PARTITION_UNIX
 	VALID_NTFT			PARTITION_NTFT
 
+=item C<":STD_HANDLE_">
+
+Constants for GetStdHandle and SetStdHandle
+
+    STD_ERROR_HANDLE
+    STD_INPUT_HANDLE
+    STD_OUTPUT_HANDLE
+
 =item C<":ALL">
 
 All of the above.
