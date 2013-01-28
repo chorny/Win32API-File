@@ -8,3 +8,6 @@ Win32API-File-*
 blib
 *.tmp
 MYMETA.*
+pm_to_blib
+
+cFile_pc_to_blib
