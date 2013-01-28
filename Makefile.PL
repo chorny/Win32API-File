@@ -32,9 +32,9 @@ WriteMakefile1(
         'Math::BigInt' => 0,
         'Win32' => 0,
         'Carp' => 0,
+        'IO::File' => 0,
     },
     TEST_REQUIRES => {
-        'IO::File' => 0,
         'File::Spec' => 0,
         'Test::More' => 0,
     },
