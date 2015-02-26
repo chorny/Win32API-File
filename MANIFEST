@@ -1,5 +1,5 @@
 Changes
-ExtUtils/Myconst2perl.pm
+inc/ExtUtils/Myconst2perl.pm
 File.pm
 File.xs
 MANIFEST
