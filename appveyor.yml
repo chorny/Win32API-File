@@ -1,0 +1,16 @@
+version: 1.0.{build}
+
+clone_depth: 1
+
+install:
+  - path C:\MinGW;C:\MinGW\bin;C:\MinGW\msys\1.0;%PATH%
+  - ppm install dmake Test::Pod
+  - lwp-download https://raw.githubusercontent.com/miyagawa/cpanminus/master/cpanm C:/projects/cpanm
+  - perl C:/projects/cpanm -q --with-develop --with-suggests --installdeps .
+  
+build_script:
+  - perl Makefile.PL
+
+test_script:
+  - dmake test
+  - prove -bv xt/*.t
