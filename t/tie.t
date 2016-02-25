@@ -30,7 +30,7 @@ my $fh = Win32API::File->new("+> $filename")
     or die fileLastError();
 
 my $tell = tell $fh;
-is($tell, 0, "tell \$fh == '$tell'");
+is(0+$tell, 0, "tell \$fh == '$tell'");
 
 my $text = "some text\n";
 
@@ -41,7 +41,7 @@ my $len = length($text) + 1; # + 1 for cr
 is($tell, $len, "after printing 'some text\\n', tell is: '$tell'");
 
 my $seek = seek($fh, 0, 0);
-is($seek, 0, "seek is: '$seek'");
+is(0+$seek, 0, "seek is: '$seek'");
 
 my $eof = eof $fh;
 ok(! $eof, 'not eof');
