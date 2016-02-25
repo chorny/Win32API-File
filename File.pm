@@ -317,8 +317,8 @@ sub OsFHandleOpen {
     if ($@) {
 	return tie *{$fh}, __PACKAGE__, $osfh;
     }
-    return  undef if  $fd < 0;
-    return  open( $fh, $pref."&=".$fd );
+    return  undef unless  $fd;
+    return  open( $fh, $pref."&=".(0+$fd) );
 }
 
 sub GetOsFHandle {
