@@ -1,5 +1,6 @@
 Revision history for Perl extension Win32API::File.
 
+0.1203 = 0.1202_01  2016-03-12
 0.1202_01 by Alexandr Ciornii 2016-02-26
         - ExtUtils::Myconst2perl moved to to inc/
         - tie.t will use Test::More

@@ -11,3 +11,10 @@ MYMETA.*
 pm_to_blib
 
 cFile_pc_to_blib
+
+/File.bs
+/File.c
+/File.def
+/File.o
+/dll.base
+/dll.exp
