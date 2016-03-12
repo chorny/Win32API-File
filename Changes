@@ -1,5 +1,12 @@
 Revision history for Perl extension Win32API::File.
 
+0.1202_01 by Alexandr Ciornii 2016-02-26
+        - ExtUtils::Myconst2perl moved to to inc/
+        - tie.t will use Test::More
+        - handle return value of OsFHandleOpenFd() correctly in OsFHandleOpen() (Tony Cook)
+          This error caused problems in IPC::Run on perl 5.22
+        - use Appveyor to test
+
 0.1202 by Alexandr Ciornii 2015-01-28
         - Typo fix by David Steinbrunner
         - Fix build in C++ mode by Daniel Dragan/Steve Hay
