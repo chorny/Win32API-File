@@ -57,7 +57,7 @@ escquote( const char *sValue )
     char *sEscaped= (char *) malloc( lLen );
     char *sNext= sEscaped;
     if(  NULL == sEscaped  ) {
-	fprintf( stderr, "Can't allocate %"UVuf"-byte buffer (errno=%d)\n",
+        fprintf( stderr, "Can't allocate %" UVuf "-byte buffer (errno=%d)\n",
 	  U_V(lLen), _errno );
 	exit( 1 );
     }
