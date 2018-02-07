@@ -39,7 +39,9 @@ sub ParseAttribs
     # Usage:  ParseAttribs( "Package::Name", \%opts, {opt=>\$var} );
     my( $pkg, $hvAttr, $hvRequests )= @_;
     my( $outfile, @perlfiles, %perlfilecodes, @cfiles, %cfilecodes );
-    my @importlist= @{$hvAttr->{IMPORT_LIST}};
+    confess "invalid second argument" unless defined($hvAttr) && ref($hvAttr) && ref($hvAttr) eq 'HASH';
+    confess "no IMPORT_LIST" unless defined($hvAttr->{IMPORT_LIST}) && ref($hvAttr->{IMPORT_LIST}) && ref($hvAttr->{IMPORT_LIST}) eq 'ARRAY';
+    my @importlist= @{ $hvAttr->{IMPORT_LIST} };
     my $perlcode= $hvAttr->{PERL_PE_CODE} ||
 	'last if /^\s*(bootstrap|XSLoader::load)\b/';
     my $ccode= $hvAttr->{C_PE_CODE} ||

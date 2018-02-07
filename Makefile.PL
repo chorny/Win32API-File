@@ -89,7 +89,7 @@ sub MY::postamble
 	# How to create F<$outfile> via ExtUtils::Myconst2perl::Myconst2perl:
 	push @m, "
 $outfile:	@perlfiles  @cfiles  Makefile" . '
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -MExtUtils::Myconst2perl \\
+	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -Iinc -MExtUtils::Myconst2perl \\
 	  -e "my %attribs;" \\
 	  ';
 	$m[-1] =~ s/^/##/gm   if  $noreb;
