@@ -10,7 +10,7 @@ matrix:
   fast_finish: true 
 
 install:
-- ps: >-
+- ps: |-
     $env:make = "dmake"
     If (${env:CONFIGURATION} -eq "ActivePerl") {
       $env:Path = "C:\MinGW;C:\MinGW\bin;C:\MinGW\msys\1.0;" + $env:Path
