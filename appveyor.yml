@@ -11,6 +11,7 @@ matrix:
 
 install:
 - ps: >-
+    $env:make = "dmake"
     If (${env:CONFIGURATION} -eq "ActivePerl") {
       $env:Path = "C:\MinGW;C:\MinGW\bin;C:\MinGW\msys\1.0;" + $env:Path
       ppm install dmake Test::Pod
@@ -22,11 +23,12 @@ install:
       $env:Path = "C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;" + $env:Path
       perl -V
       cpanm -q --with-develop --with-suggests --installdeps .
+      $env:make = "gmake"
     }
   
 build_script:
   - perl Makefile.PL
 
 test_script:
-  - dmake test
+  - '%make% test'
   - prove -bv xt/*.t
