@@ -1,13 +1,15 @@
 /* Win32API/File.xs */
-
+#define PERL_NO_GET_CONTEXT
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
 /*#include "patchlevel.h"*/
 
 /* Uncomment the next line unless set "WRITE_PERL=>1" in Makefile.PL: */
-#define NEED_newCONSTSUB
-#include "ppport.h"
+#ifdef USE_PPPORT_H
+#  define NEED_newCONSTSUB
+#  include "ppport.h"
+#endif
 
 #ifdef WORD
 # undef WORD
@@ -57,6 +59,7 @@
     static void
     ErrPrintf( const char *sFmt, ... )
     {
+      dTHX;
       va_list pAList;
       static char *sEnv= NULL;
       DWORD uErr= GetLastError();

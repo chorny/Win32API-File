@@ -15,6 +15,7 @@ WriteMakefile1(
     (  $Config{archname} =~ /-object\b/i  ?  ( 'CAPI' => 'TRUE' )  :  ()  ),
     'AUTHOR'		=> 'Tye McQueen <tye@metronet.com>',
     'ABSTRACT_FROM'	=> 'File.pm',
+    'DEFINE'		=> ($ENV{PERL_CORE} ? '' : '-DUSE_PPPORT_H'),
     'postamble' => { IMPORT_LIST => [qw(/._/ !/[a-z]/ :MEDIA_TYPE)],
 		     IFDEF => "!/[a-z\\d]/",
 		     CPLUSPLUS => 1,
