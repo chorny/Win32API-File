@@ -28,6 +28,10 @@ sub _cc
     return ".cxx";	# Seems to be the most widely accepted extension.
 }
 
+=pod
+
+=over 4
+
 =item ParseAttribs
 
 Parses user-firendly options into coder-firendly specifics.
@@ -172,6 +176,8 @@ sub ParseAttribs
     }
 }
 
+=pod
+
 =item Myconst2perl
 
 Generates a file used to implement C constants as "constant subroutines" in
@@ -182,6 +188,8 @@ first part of the Module's F<*.pm> file and then requesting some groups of
 symbols be exported/imported into a dummy package.  Then writes C or C++
 code that can convert each C constant into a Perl "constant subroutine"
 whose name is the constant's name and whose value is the constant's value.
+
+=back
 
 =cut
 
