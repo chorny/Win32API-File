@@ -332,7 +332,7 @@ sub GetOsFHandle {
 	}
 	no strict "refs";
 	# The eval "" is necessary in Perl 5.6, avoid it otherwise.
-	my $tied = !defined($^]) || $^] < 5.008
+	my $tied = !defined($]) || $] < 5.008
                        ? eval "tied *{$file}"
                        : tied *{$file};
 
